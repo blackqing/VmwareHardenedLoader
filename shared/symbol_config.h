@@ -1,0 +1,14 @@
+#pragma once
+
+#define VMLOADER_SYMBOL_SCHEMA_VERSION 1u
+
+#define VMLOADER_PARAMETERS_SUBKEY L"Parameters"
+#define VMLOADER_VALUE_SCHEMA_VERSION L"SchemaVersion"
+#define VMLOADER_VALUE_KERNEL_TIMESTAMP L"KernelTimeDateStamp"
+#define VMLOADER_VALUE_KERNEL_IMAGE_SIZE L"KernelSizeOfImage"
+#define VMLOADER_VALUE_KERNEL_CHECKSUM L"KernelCheckSum"
+#define VMLOADER_VALUE_FIRMWARE_RESOURCE_RVA L"ExpFirmwareTableResourceRva"
+#define VMLOADER_VALUE_FIRMWARE_PROVIDER_LIST_RVA L"ExpFirmwareTableProviderListHeadRva"
+
+#define VMLOADER_SYMBOL_RESOURCE L"ExpFirmwareTableResource"
+#define VMLOADER_SYMBOL_PROVIDER_LIST L"ExpFirmwareTableProviderListHead"

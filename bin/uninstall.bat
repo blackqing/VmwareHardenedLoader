@@ -50,6 +50,7 @@ title VMware Hardened Loader Uninstallation Script
 
 sc stop vmloader
 sc delete vmloader
+reg delete "HKLM\SYSTEM\CurrentControlSet\Services\vmloader\Parameters" /f 1>nul 2>nul
 del /F /Q "C:\vmloader.sys"
 echo Press any key to restart...
 pause > nul

@@ -19,19 +19,25 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="VmLoader.inf">
-      <Filter>Driver Files</Filter>
-    </Inf>
+    <ClCompile Include="driver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="firmware_hook.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kernel_symbols.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cs_driver_mm.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="kernel_stl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="firmware_hook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="kernel_symbols.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\symbol_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
