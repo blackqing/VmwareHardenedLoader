@@ -155,10 +155,12 @@
     <ClCompile Include="driver.cpp" />
     <ClCompile Include="firmware_hook.cpp" />
     <ClCompile Include="kernel_symbols.cpp" />
+    <ClCompile Include="pnp_hook.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="firmware_hook.h" />
     <ClInclude Include="kernel_symbols.h" />
+    <ClInclude Include="pnp_hook.h" />
     <ClInclude Include="..\shared\symbol_config.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -28,12 +28,18 @@
     <ClCompile Include="kernel_symbols.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="pnp_hook.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="firmware_hook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="kernel_symbols.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pnp_hook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\shared\symbol_config.h">
