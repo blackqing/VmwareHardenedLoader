@@ -17,20 +17,22 @@ PERESOURCE g_firmware_table_resource = nullptr;
 PLIST_ENTRY g_firmware_table_provider_list_head = nullptr;
 BOOLEAN g_hooks_installed = FALSE;
 
-void RemoveSignatures(
+void ReplaceInPlace(
 	_Inout_ PVOID Buffer,
 	_In_ ULONG BufferLength,
-	_In_reads_bytes_(SignatureLength) const char* Signature,
-	_In_ SIZE_T SignatureLength) {
-	if (!Buffer || !Signature || SignatureLength == 0) {
+	_In_reads_bytes_(PatternLength) const char* Pattern,
+	_In_reads_bytes_(PatternLength) const char* Replacement,
+	_In_ SIZE_T PatternLength) {
+	if (!Buffer || !Pattern || !Replacement || PatternLength == 0) {
 		return;
 	}
 	PUCHAR cursor = static_cast<PUCHAR>(Buffer);
 	SIZE_T remaining = BufferLength;
-	while (remaining >= SignatureLength) {
+	while (remaining >= PatternLength) {
 		PUCHAR match = nullptr;
-		for (SIZE_T i = 0; i <= remaining - SignatureLength; ++i) {
-			if (RtlCompareMemory(cursor + i, Signature, SignatureLength) == SignatureLength) {
+		const SIZE_T searchLen = remaining - PatternLength + 1;
+		for (SIZE_T i = 0; i < searchLen; ++i) {
+			if (RtlCompareMemory(cursor + i, Pattern, PatternLength) == PatternLength) {
 				match = cursor + i;
 				break;
 			}
@@ -38,26 +40,116 @@ void RemoveSignatures(
 		if (!match) {
 			return;
 		}
-		RtlFillMemory(match, SignatureLength, '7');
-		remaining -= static_cast<SIZE_T>(match + SignatureLength - cursor);
-		cursor = match + SignatureLength;
+		RtlCopyMemory(match, Replacement, PatternLength);
+		const SIZE_T consumed = static_cast<SIZE_T>((match - cursor) + PatternLength);
+		cursor = match + PatternLength;
+		remaining -= consumed;
 	}
+}
+
+
+void RemoveEnumerationEntry(
+	_Inout_ PSYSTEM_FIRMWARE_TABLE_INFORMATION Info,
+	_In_reads_bytes_(4) const char* Signature) {
+	if (!Info || !Info->TableBuffer || !Signature) {
+		return;
+	}
+	ULONG length = Info->TableBufferLength;
+	if (length < 4 || (length & 3u) != 0) {
+		return;
+	}
+	PUCHAR bytes = static_cast<PUCHAR>(static_cast<PVOID>(Info->TableBuffer));
+	const UCHAR reversed[4] = {
+		static_cast<UCHAR>(Signature[3]),
+		static_cast<UCHAR>(Signature[2]),
+		static_cast<UCHAR>(Signature[1]),
+		static_cast<UCHAR>(Signature[0]),
+	};
+	ULONG dst = 0;
+	for (ULONG src = 0; src < length; src += 4) {
+		if (RtlCompareMemory(bytes + src, Signature, 4) == 4 ||
+			RtlCompareMemory(bytes + src, reversed, 4) == 4) {
+			continue;
+		}
+		if (dst != src) {
+			bytes[dst + 0] = bytes[src + 0];
+			bytes[dst + 1] = bytes[src + 1];
+			bytes[dst + 2] = bytes[src + 2];
+			bytes[dst + 3] = bytes[src + 3];
+		}
+		dst += 4;
+	}
+	if (dst < length) {
+		RtlZeroMemory(bytes + dst, length - dst);
+		Info->TableBufferLength = dst;
+	}
+}
+
+BOOLEAN TableIdMatches(_In_ ULONG TableID, _In_reads_bytes_(4) const char* Signature) {
+	const UCHAR reversed[4] = {
+		static_cast<UCHAR>(Signature[3]),
+		static_cast<UCHAR>(Signature[2]),
+		static_cast<UCHAR>(Signature[1]),
+		static_cast<UCHAR>(Signature[0]),
+	};
+	return (RtlCompareMemory(&TableID, Signature, 4) == 4 ||
+		RtlCompareMemory(&TableID, reversed, 4) == 4);
+}
+
+// Standard ACPI table header layout:
+//   [ 0.. 3] Signature
+//   [ 4.. 7] Length (whole table)
+//   [ 8]     Revision
+//   [ 9]     Checksum       <- sum of all Length bytes must equal 0 (mod 256)
+//   [10..15] OEMID
+//   [16..23] OEMTableID
+//   [24..27] OEMRevision
+//   [28..31] AslCompilerID
+//   [32..35] AslCompilerRevision
+
+void RecomputeAcpiChecksum(_Inout_ PVOID Buffer, _In_ ULONG BufferLength) {
+	if (!Buffer || BufferLength < 36) {
+		return;
+	}
+	PUCHAR bytes = static_cast<PUCHAR>(Buffer);
+	ULONG length = 0;
+	RtlCopyMemory(&length, bytes + 4, sizeof(length));
+	if (length < 36 || length > BufferLength) {
+		return;
+	}
+	bytes[9] = 0;
+	UCHAR sum = 0;
+	for (ULONG i = 0; i < length; ++i) {
+		sum = static_cast<UCHAR>(sum + bytes[i]);
+	}
+	bytes[9] = static_cast<UCHAR>(0u - sum);
 }
 
 NTSTATUS __cdecl FilterFirm(PSYSTEM_FIRMWARE_TABLE_INFORMATION info) {
 	const NTSTATUS status = g_original_firm_handler(info);
 	if (NT_SUCCESS(status) && info && info->Action == 1) {
-		RemoveSignatures(info->TableBuffer, info->TableBufferLength, "VMware", 6);
-		RemoveSignatures(info->TableBuffer, info->TableBufferLength, "Virtual", 7);
+		ReplaceInPlace(info->TableBuffer, info->TableBufferLength, "VMware", "System", 6);
+		ReplaceInPlace(info->TableBuffer, info->TableBufferLength, "Virtual", "Generic", 7);
 	}
 	return status;
 }
 
 NTSTATUS __cdecl FilterAcpi(PSYSTEM_FIRMWARE_TABLE_INFORMATION info) {
+
+	if (info && info->Action == 1 && TableIdMatches(info->TableID, "WAET")) {
+		info->TableBufferLength = 0;
+		return STATUS_NOT_FOUND;
+	}
+
 	const NTSTATUS status = g_original_acpi_handler(info);
-	if (NT_SUCCESS(status) && info && info->Action == 1) {
-		RemoveSignatures(info->TableBuffer, info->TableBufferLength, "VMware", 6);
-		RemoveSignatures(info->TableBuffer, info->TableBufferLength, "VMWARE", 6);
+	if (NT_SUCCESS(status) && info) {
+		if (info->Action == 0) {
+			RemoveEnumerationEntry(info, "WAET");
+		} else if (info->Action == 1) {
+			ReplaceInPlace(info->TableBuffer, info->TableBufferLength, "VMware", "System", 6);
+			ReplaceInPlace(info->TableBuffer, info->TableBufferLength, "VMWARE", "SYSTEM", 6);
+			RecomputeAcpiChecksum(info->TableBuffer, info->TableBufferLength);
+		}
 	}
 	return status;
 }
@@ -65,8 +157,8 @@ NTSTATUS __cdecl FilterAcpi(PSYSTEM_FIRMWARE_TABLE_INFORMATION info) {
 NTSTATUS __cdecl FilterRsmb(PSYSTEM_FIRMWARE_TABLE_INFORMATION info) {
 	const NTSTATUS status = g_original_rsmb_handler(info);
 	if (NT_SUCCESS(status) && info && info->Action == 1) {
-		RemoveSignatures(info->TableBuffer, info->TableBufferLength, "VMware", 6);
-		RemoveSignatures(info->TableBuffer, info->TableBufferLength, "VMWARE", 6);
+		ReplaceInPlace(info->TableBuffer, info->TableBufferLength, "VMware", "System", 6);
+		ReplaceInPlace(info->TableBuffer, info->TableBufferLength, "VMWARE", "SYSTEM", 6);
 	}
 	return status;
 }
