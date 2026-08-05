@@ -191,8 +191,12 @@ Do not install VMware Tools in the test guest if the objective is to minimize VM
 - The driver filters selected firmware and PnP observations only; it does not remove all virtualization indicators.
 - Only x64 Release and Debug builds are supported.
 
+## Dependencies
+
+[System Informer](https://github.com/hzqst/systeminformer/) as submodule for KPH dynamic data and the `CustomBuildTool` and `CustomSignTool` utilities.
+
+[kphtools](https://github.com/HLND2T/kphtools) as private symbol source that provide RVA for `ExpFirmwareTableResource` && `ExpFirmwareTableProviderListHead`.
+
 ## License
 
 Released under the MIT License. See [LICENSE](LICENSE).
-
-Some utility concepts in the original project came from [HyperPlatform](https://github.com/tandasat/HyperPlatform). The repository also contains historical [Capstone](https://github.com/capstone-engine/capstone) source.
