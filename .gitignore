@@ -329,9 +329,5 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 
-# Packaged loader artifacts intentionally shipped by this repository.
-!bin/
+# Packaged artifacts
 bin/*
-!bin/vmloader.sys
-!bin/dyndata.bin
-!bin/dyndata.sig
