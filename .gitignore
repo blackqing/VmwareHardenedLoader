@@ -332,7 +332,6 @@ ASALocalRun/
 # Packaged loader artifacts intentionally shipped by this repository.
 !bin/
 bin/*
-!bin/install.bat
-!bin/uninstall.bat
 !bin/vmloader.sys
-!bin/vmloader_resolver.exe
+!bin/dyndata.bin
+!bin/dyndata.sig

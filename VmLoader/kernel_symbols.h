@@ -7,6 +7,6 @@ struct VmLoaderKernelSymbols {
 	PVOID FirmwareTableProviderListHead;
 };
 
-NTSTATUS VmLoaderLoadKernelSymbols(
+extern "C" NTSTATUS VmLoaderLoadKernelSymbols(
 	_In_ PUNICODE_STRING RegistryPath,
 	_Out_ VmLoaderKernelSymbols* Symbols);

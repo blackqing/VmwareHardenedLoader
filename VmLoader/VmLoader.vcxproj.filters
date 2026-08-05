@@ -31,6 +31,15 @@
     <ClCompile Include="pnp_hook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyndata.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyn.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdynverify.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="firmware_hook.h">
@@ -45,5 +54,22 @@
     <ClInclude Include="..\shared\symbol_config.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyndata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdynverify.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MessageCompile Include="..\thirdparty\systeminformer\kphlib\sistatus.mc">
+      <Filter>Driver Files</Filter>
+    </MessageCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PrepareDynData.ps1" />
   </ItemGroup>
 </Project>

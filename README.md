@@ -1,45 +1,34 @@
 # VMwareHardenedLoader-ng
 
-VMwareHardenedLoader-ng is a Windows kernel driver and user-mode symbol resolver for VMware guest research environments. The driver filters VMware-related strings from firmware table query results.
+VMwareHardenedLoader-ng is a Windows kernel driver for VMware guest research environments. It filters VMware-related firmware strings and blocks selected VMware PnP registry enumeration.
 
-This version replaces kernel signature scanning and Capstone disassembly with exact PDB symbol resolution.
+The driver resolves its undocumented kernel globals from signed System Informer KPH dynamic data instead of PDBs, signature scanning, or registry-provided RVAs.
 
 ## Supported systems
 
 - Windows 10 and Windows 11 x64 guests
 - Visual Studio 2022
 - Windows Driver Kit 10
+- .NET SDK 9 or newer for `CustomBuildTool`
 
-Older Windows versions are not tested by the current build configuration.
+Only `Release|x64` is maintained and verified by the current build configuration.
 
-## How it works
+## Dynamic data
 
-`vmloader_resolver.exe` performs these steps before the driver starts:
+The build produces KPH dynamic configuration version 20. It extends the System Informer v19 kernel layout with these `ULONG` RVAs:
 
-1. Finds the running `ntoskrnl.exe` image.
-2. Reads its RSDS PDB identity.
-3. Downloads the matching PDB from the Microsoft symbol server.
-4. Resolves `ExpFirmwareTableResource` and `ExpFirmwareTableProviderListHead`.
-5. Confirms that both symbols point to writable, non-executable kernel data.
-6. Writes their RVAs and kernel identity to the driver service registry key.
+- `ExpFirmwareTableResource`
+- `ExpFirmwareTableProviderListHead`
 
-The driver reads this configuration from:
+Each record is selected by an exact match on:
 
 ```text
-HKLM\SYSTEM\CurrentControlSet\Services\vmloader\Parameters
+Class + Machine + TimeDateStamp + SizeOfImage
 ```
 
-Before it uses an RVA, the driver checks the schema version, PE timestamp, image size, checksum, and section permissions against the running kernel. It rejects stale or invalid configuration.
+A record that does not contain both firmware fields stores `ULONG_MAX` for the missing value and is treated as unsupported at runtime.
 
-## Project structure
-
-| Path | Purpose |
-| --- | --- |
-| `SymbolResolver/main.cpp` | Downloads the matching PDB, resolves symbols, and writes the registry configuration. |
-| `VmLoader/kernel_symbols.cpp` | Reads and validates symbol RVAs in kernel mode. |
-| `VmLoader/firmware_hook.cpp` | Installs firmware provider hooks and filters returned strings. |
-| `VmLoader/driver.cpp` | Manages driver startup and unload. |
-| `shared/symbol_config.h` | Defines the registry contract shared by both programs. |
+The driver validates both resolved RVAs before use. They must be non-zero, distinct, and located in writable, non-executable sections of the running `ntoskrnl.exe` image.
 
 ## Build
 
@@ -49,92 +38,121 @@ Open a Visual Studio 2022 Developer Command Prompt with the WDK installed, then 
 msbuild VmLoader.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
 ```
 
-The build copies these files to `bin`:
+Before C/C++ compilation, the project automatically performs these steps:
+
+1. Downloads the latest manifest from `https://github.com/HLND2T/kphtools/releases/latest/download/kphdyn.xml` into a temporary file.
+2. Parses the XML with DTD processing disabled and verifies that usable firmware records exist.
+3. Atomically replaces `thirdparty/systeminformer/kphlib/kphdyn.xml` only after validation succeeds.
+4. Builds System Informer's `CustomBuildTool` and generates the v20 embedded source plus `ksidyn.bin`.
+5. Signs the binary with RSA-PSS/SHA-512, verifies it again with the matching public key, and publishes it.
+6. Generates the driver public-key header under the intermediate build directory.
+
+The build intentionally does not use a cached manifest. A download, XML validation, generation, signing, or verification failure stops the build.
+
+The build requires HTTPS access to GitHub and may require NuGet access when restoring `CustomBuildTool` packages.
+
+### Signing key
+
+On the first successful preparation, if both key files are absent, the build creates a VmLoader-specific 4096-bit RSA key pair here:
+
+```text
+thirdparty\systeminformer\tools\CustomSignTool\Resources\kph.key
+thirdparty\systeminformer\tools\CustomSignTool\Resources\public.key
+```
+
+Both files are ignored by the System Informer submodule. The private key is never copied into the parent repository, intermediate public header, or packaged output.
+
+Back up `kph.key` and `public.key` together. If exactly one file is present, the build fails instead of silently rotating the signing identity. Losing or replacing the key pair requires rebuilding the driver and re-signing all external dynamic data.
+
+### Build outputs
+
+The build publishes exactly these runtime files under `bin`:
 
 ```text
 bin\vmloader.sys
-bin\vmloader_resolver.exe
+bin\dyndata.bin
+bin\dyndata.sig
 ```
 
-The build leaves `vmloader.sys` unsigned. Sign it with a test or production certificate before loading it.
+`vmloader.sys` remains unsigned. Sign it with a test or production code-signing certificate before loading it.
 
-### Test certificate
+## Runtime loading
 
-Create and export a test certificate on the host in an elevated PowerShell:
+At `DriverEntry`, the driver first identifies the running `ntoskrnl.exe` base and PE metadata. It then tries dynamic data in this order:
 
-```powershell
-$cert = New-SelfSignedCertificate `
-  -Type CodeSigningCert `
-  -Subject "CN=VmLoader Test" `
-  -CertStoreLocation "Cert:\LocalMachine\My"
+1. Signed external `dyndata.bin` and `dyndata.sig` from `DynDataDirectory`.
+2. The trusted v20 `KphDynConfig` compiled into the driver.
 
-Export-Certificate -Cert $cert -FilePath C:\VmLoaderTest.cer
+External data is used only after its RSA-PSS/SHA-512 signature is verified by the public key compiled into the driver. The binary is limited to 8 MiB and the signature to 1024 bytes.
+
+Missing registry configuration, missing files, invalid paths, signature failures, incompatible formats, unmatched kernels, missing firmware fields, or invalid RVAs are logged with an `NTSTATUS`, then the driver attempts the embedded configuration. If both sources fail, `DriverEntry` returns failure before any firmware or PnP hook is installed.
+
+There is no runtime hot reload. Restart the driver to load changed external data.
+
+## External dynamic data directory
+
+Create this optional `REG_SZ` value under the driver service key:
+
+```text
+HKLM\SYSTEM\CurrentControlSet\Services\vmloader\Parameters
+    DynDataDirectory    REG_SZ    C:\VmLoader
 ```
 
-Sign the driver on the host. Replace the path if the WDK is installed elsewhere:
+The configured directory must contain:
 
-```powershell
-$signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" |
-  Sort-Object FullName -Descending |
-  Select-Object -First 1 -ExpandProperty FullName
-$driverPath = (Resolve-Path ".\bin\vmloader.sys").Path
-
-& $signtool sign /v /fd SHA256 /ph /s My /sm /n "VmLoader Test" `
-  $driverPath
+```text
+dyndata.bin
+dyndata.sig
 ```
 
-Copy the signed `vmloader.sys`, `vmloader_resolver.exe`, `install.bat`, and `C:\VmLoaderTest.cer` to the guest.
-
-On the guest, open an elevated Command Prompt and install the certificate before starting the driver:
+Example:
 
 ```bat
-certutil -addstore -f Root C:\VmLoaderTest.cer
-certutil -addstore -f TrustedPublisher C:\VmLoaderTest.cer
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\vmloader\Parameters" ^
+  /v DynDataDirectory /t REG_SZ /d "C:\VmLoader" /f
 ```
 
-For test signing in a disposable VM, open an elevated Command Prompt and run:
+Accepted directory forms include a local DOS absolute path such as `C:\VmLoader` and a local NT absolute path such as `\??\C:\VmLoader` or `\Device\HarddiskVolume3\VmLoader`. Forward slashes are normalized.
+
+Relative paths and network paths, including UNC and known NT redirector paths, are rejected. Environment variables are not expanded.
+
+The external files must be signed with the same private key used when the driver public key was generated. Copying a `dyndata.bin/.sig` pair from a build with a different key causes signature rejection and embedded fallback.
+
+## Driver behavior
+
+`DriverEntry` performs these operations in order:
+
+1. Loads and validates KPH dynamic data for the running kernel.
+2. Replaces firmware table provider handlers.
+3. Registers the PnP registry callback.
+
+Failure at any stage prevents later stages from running. Unload removes PnP hooks first, then firmware hooks.
+
+Firmware filtering:
+
+- `FIRM`: replaces `VMware` with `System` and `Virtual` with `Generic` in SMBIOS buffers.
+- `ACPI`: hides WAET, replaces VMware strings, and recomputes the ACPI checksum.
+- `RSMB`: replaces VMware strings in raw SMBIOS data.
+
+PnP filtering applies only to user-mode callers and hides matching VMware PCI/USB device keys under the supported Enum branches.
+
+## Test signing
+
+For disposable test VMs, enable test-signing mode from an elevated Command Prompt:
 
 ```bat
 bcdedit /set testsigning on
 ```
 
-Restart Windows after changing the boot setting. Test mode must be enabled before Windows loads the unsigned driver. Disable it after testing with:
+Restart Windows after changing the boot setting. Sign `bin\vmloader.sys` with a trusted test certificate before loading it. Disable test-signing mode after testing with:
 
 ```bat
 bcdedit /set testsigning off
 ```
 
-## Resolver checks
-
-Run the local metadata check without downloading a PDB or changing the registry:
-
-```bat
-bin\vmloader_resolver.exe --self-test
-```
-
-Download the matching PDB and resolve all required symbols without changing the registry:
-
-```bat
-bin\vmloader_resolver.exe --dry-run
-```
-
-Run the resolver without an option to write the validated configuration. The `vmloader` service key must already exist.
-
-```bat
-bin\vmloader_resolver.exe
-```
-
-The first symbol resolution requires HTTPS access to:
-
-```text
-https://msdl.microsoft.com/download/symbols
-```
-
-Downloaded PDB files are cached under `%ProgramData%\VmLoader\Symbols`.
-
 ## VMware configuration
 
-Power off the VM and back up its `.vmx` file before editing it. Add these settings to the VMX file:
+Power off the VM and back up its `.vmx` file before editing it. Common research settings include:
 
 ```ini
 hypervisor.cpuid.v0 = "FALSE"
@@ -147,77 +165,28 @@ isolation.tools.getPtrLocation.disable = "TRUE"
 isolation.tools.setPtrLocation.disable = "TRUE"
 isolation.tools.setVersion.disable = "TRUE"
 isolation.tools.getVersion.disable = "TRUE"
-monitor_control.disable_directexec = "TRUE"
-monitor_control.disable_chksimd = "TRUE"
-monitor_control.disable_ntreloc = "TRUE"
-monitor_control.disable_selfmod = "TRUE"
-monitor_control.disable_reloc = "TRUE"
-monitor_control.disable_btinout = "TRUE"
-monitor_control.disable_btmemspace = "TRUE"
-monitor_control.disable_btpriv = "TRUE"
-monitor_control.disable_btseg = "TRUE"
 monitor_control.restrict_backdoor = "TRUE"
 ```
 
-If the system disk uses the first SCSI slot, also change its reported identity:
-
-```ini
-scsi0:0.productID = "Generic SSD"
-scsi0:0.vendorID = "Generic"
-```
-
-Set a non-VMware MAC address in the VMX file. For example:
-
-```ini
-ethernet0.address = "00:11:56:20:D2:E8"
-```
-
-Do not install VMware Tools in the test guest. They can restore VMware-specific indicators.
-
-## Install
-
-Warning: `install.bat` modifies the driver service, deletes `HKLM\HARDWARE\ACPI\DSDT\PTLTD_`, and forces a restart after installation. Use it only in a test VM with a recoverable snapshot.
-
-1. Build both projects as `Release|x64`.
-2. Sign `bin\vmloader.sys` and export the test certificate.
-3. Copy the signed driver, resolver, installer, and certificate to the guest.
-4. Import the certificate into `Root` and `TrustedPublisher` on the guest.
-5. Enable test signing and restart the guest.
-6. Run `bin\install.bat` as administrator in the guest.
-
-The installer stops an existing `vmloader` service, copies the driver to `C:\vmloader.sys`, creates or updates the service, resolves the current kernel symbols, and starts the driver. It does not start the driver when symbol resolution fails.
-
-## Uninstall
-
-Run this command as administrator:
-
-```bat
-bin\uninstall.bat
-```
-
-The script stops and deletes the service, removes the symbol registry configuration, and deletes `C:\vmloader.sys`.
-
-## After a Windows update
-
-A Windows update can replace `ntoskrnl.exe`. The driver rejects registry values for the previous kernel build. Run `vmloader_resolver.exe` again before starting the driver, or rerun `install.bat` after signing the current driver build.
+Do not install VMware Tools in the test guest if the objective is to minimize VMware-specific indicators.
 
 ## Troubleshooting
 
-- Run `vmloader_resolver.exe --self-test` to check kernel image and PDB metadata parsing.
-- Run `vmloader_resolver.exe --dry-run` to test network access and symbol availability.
-- Check that the Microsoft symbol server is reachable through the guest network and proxy.
-- Use DbgView to read `VmLoader:` kernel messages when the service fails to start.
-- Confirm that Windows accepts the driver signature or that test-signing mode is enabled.
+- Check build output for the validated firmware-record counts and `signature is valid` before compilation.
+- Confirm that `bin\dyndata.bin` and `bin\dyndata.sig` came from the same key pair as the driver build.
+- Check `DynDataDirectory` is a `REG_SZ` local absolute directory, not a file path.
+- Use DbgView or a kernel debugger to inspect `VmLoader:` messages and the reported `NTSTATUS`.
+- After a Windows update, install a newly generated signed dynamic-data pair if the embedded configuration does not contain the new kernel identity.
 
 ## Limitations
 
-- The driver depends on private Windows symbols and an undocumented firmware provider structure.
-- A future Windows build can change the private structure even when both symbols resolve.
-- The driver filters firmware table results only. It does not change VMware graphics, device, network, or guest-tool indicators.
-- Only x64 builds are supported.
+- The driver depends on undocumented Windows kernel globals and firmware provider structures.
+- A Windows update can change those internals even when both RVAs are available.
+- The driver filters selected firmware and PnP observations only; it does not remove all virtualization indicators.
+- Only x64 Release builds are supported.
 
 ## License
 
 Released under the MIT License. See [LICENSE](LICENSE).
 
-Some utility concepts in the original project came from [HyperPlatform](https://github.com/tandasat/HyperPlatform). The repository also contains the historical [Capstone](https://github.com/capstone-engine/capstone) source tree.
+Some utility concepts in the original project came from [HyperPlatform](https://github.com/tandasat/HyperPlatform). The repository also contains historical [Capstone](https://github.com/capstone-engine/capstone) source.

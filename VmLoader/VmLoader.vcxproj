@@ -142,10 +142,14 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\shared;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\shared;$(ProjectDir)..\thirdparty\systeminformer\kphlib\include;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>ksecdd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
     <PostBuildEvent>
-      <Command>copy $(OutDir)$(TargetName)$(TargetExt) "..\bin\vmloader.sys"</Command>
+      <Command>if not exist "$(ProjectDir)..\bin" mkdir "$(ProjectDir)..\bin"
+copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\vmloader.sys"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -156,13 +160,39 @@
     <ClCompile Include="firmware_hook.cpp" />
     <ClCompile Include="kernel_symbols.cpp" />
     <ClCompile Include="pnp_hook.cpp" />
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyndata.c" />
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyn.c" />
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdynverify.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="firmware_hook.h" />
     <ClInclude Include="kernel_symbols.h" />
     <ClInclude Include="pnp_hook.h" />
     <ClInclude Include="..\shared\symbol_config.h" />
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyndata.h" />
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyn.h" />
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdynverify.h" />
   </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <MessageCompile Include="..\thirdparty\systeminformer\kphlib\sistatus.mc">
+      <GeneratedHeaderPath>true</GeneratedHeaderPath>
+      <HeaderFilePath>$(IntDir)</HeaderFilePath>
+      <GeneratedRcAndMessagesPath>true</GeneratedRcAndMessagesPath>
+      <RCFilePath>$(IntDir)</RCFilePath>
+      <SetCustomerbit>true</SetCustomerbit>
+      <TerminateMessageWithNull>true</TerminateMessageWithNull>
+      <UnicodeMessageInBinFile>true</UnicodeMessageInBinFile>
+      <UnicodeInputFile>true</UnicodeInputFile>
+    </MessageCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PrepareDynData.ps1" />
+  </ItemGroup>
+  <Target Name="PrepareVmLoaderDynData"
+          BeforeTargets="ClCompile"
+          Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)PrepareDynData.ps1&quot; -RepositoryRoot &quot;$(ProjectDir)..&quot; -ProjectDirectory &quot;$(ProjectDir).&quot; -IntermediateDirectory &quot;$(IntDir).&quot; -OutputDirectory &quot;$(ProjectDir)..\bin&quot;" />
+  </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
