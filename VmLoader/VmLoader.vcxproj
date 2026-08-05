@@ -157,10 +157,8 @@
     <PostBuildEvent>
       <Command>
 if not exist "$(ProjectDir)..\bin" mkdir "$(ProjectDir)..\bin"
-if not exist "$(ProjectDir)..\bin\$(PlatformTarget)" mkdir "$(ProjectDir)..\bin\$(PlatformTarget)"
-if not exist "$(ProjectDir)..\bin\$(PlatformTarget)\$(Configuration)" mkdir "$(ProjectDir)..\bin\$(PlatformTarget)\$(Configuration)"
-copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\$(PlatformTarget)\$(Configuration)\$(TargetName)$(TargetExt)"
-copy /Y "$(OutDir)$(TargetName).pdb" "$(ProjectDir)..\bin\$(PlatformTarget)\$(Configuration)\$(TargetName).pdb"
+if exist "$(OutDir)$(TargetName)$(TargetExt)" copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\$(TargetName)$(TargetExt)"
+if exist "$(OutDir)$(TargetName).pdb" copy /Y "$(OutDir)$(TargetName).pdb" "$(ProjectDir)..\bin\$(TargetName).pdb"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
