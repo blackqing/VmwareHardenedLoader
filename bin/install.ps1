@@ -70,6 +70,11 @@ if ($LASTEXITCODE -ne 0) {
     throw "Failed to configure the $serviceName service."
 }
 
+$dynDataDirectory = [System.IO.Path]::GetFullPath($PSScriptRoot)
+$parametersRegistryPath = "HKLM:\SYSTEM\CurrentControlSet\Services\$serviceName\Parameters"
+New-Item -Path $parametersRegistryPath -Force | Out-Null
+New-ItemProperty -Path $parametersRegistryPath -Name 'DynDataDirectory' -PropertyType String -Value $dynDataDirectory -Force | Out-Null
+
 & sc.exe start $serviceName
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to load the $serviceName driver."
