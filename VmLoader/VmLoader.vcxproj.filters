@@ -31,6 +31,9 @@
     <ClCompile Include="pnp_hook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="registry_cleanup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyndata.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -49,6 +52,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pnp_hook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="registry_cleanup.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\shared\symbol_config.h">

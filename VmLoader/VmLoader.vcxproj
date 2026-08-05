@@ -162,6 +162,7 @@ copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\vmloader.sys"<
     <ClCompile Include="firmware_hook.cpp" />
     <ClCompile Include="kernel_symbols.cpp" />
     <ClCompile Include="pnp_hook.cpp" />
+    <ClCompile Include="registry_cleanup.cpp" />
     <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyndata.c" />
     <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyn.c" />
     <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdynverify.c" />
@@ -170,6 +171,7 @@ copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\vmloader.sys"<
     <ClInclude Include="firmware_hook.h" />
     <ClInclude Include="kernel_symbols.h" />
     <ClInclude Include="pnp_hook.h" />
+    <ClInclude Include="registry_cleanup.h" />
     <ClInclude Include="..\shared\symbol_config.h" />
     <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyndata.h" />
     <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyn.h" />

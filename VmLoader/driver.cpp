@@ -3,6 +3,7 @@
 #include "firmware_hook.h"
 #include "kernel_symbols.h"
 #include "pnp_hook.h"
+#include "registry_cleanup.h"
 
 namespace {
 
@@ -41,6 +42,15 @@ extern "C" NTSTATUS DriverEntry(
 		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: pnp hook installation failed: 0x%08X\n", status);
 		VmLoaderRemoveFirmwareHooks();
+		return status;
+	}
+
+	status = VmLoaderCleanupRegistryEntries();
+	if (!NT_SUCCESS(status)) {
+		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+			"VmLoader: reg entries cleanup failed: 0x%08X\n", status);
+		VmLoaderRemoveFirmwareHooks();
+		VmLoaderRemovePnpHooks();
 		return status;
 	}
 
