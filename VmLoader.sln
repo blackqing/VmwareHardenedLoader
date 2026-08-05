@@ -5,8 +5,6 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VmLoader", "VmLoader\VmLoader.vcxproj", "{DA667B64-6E37-40D3-B399-6E65615B3D7F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SymbolResolver", "SymbolResolver\SymbolResolver.vcxproj", "{0F53CB6D-859E-4B19-9499-35FC90F5C693}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
