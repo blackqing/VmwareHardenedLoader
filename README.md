@@ -7,6 +7,9 @@ The driver resolves its undocumented kernel globals from signed System Informer 
 ## Supported systems
 
 - Windows 10 and Windows 11 x64 or ARM64 guests
+
+## Build requirements
+
 - Visual Studio 2022
 - Windows Driver Kit 10
 - .NET SDK 9 or newer for `CustomBuildTool`
@@ -30,7 +33,7 @@ A record that does not contain both firmware fields stores `ULONG_MAX` for the m
 
 The driver validates both resolved RVAs before use. They must be non-zero, distinct, and located in writable, non-executable sections of the running `ntoskrnl.exe` image.
 
-## Build
+## Build instruction
 
 Open a Visual Studio 2022 Developer Command Prompt with the WDK installed, then run:
 
