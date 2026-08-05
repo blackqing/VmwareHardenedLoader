@@ -10,9 +10,9 @@ $serviceName = if ([string]::IsNullOrWhiteSpace($env:VMLOADER_SERVICE_NAME)) {
 else {
     $env:VMLOADER_SERVICE_NAME
 }
-$sourcePath = Join-Path $PSScriptRoot 'vmloader.sys'
+$sourcePath = Join-Path $PSScriptRoot 'VmLoader.sys'
 $driverFileName = if ([string]::IsNullOrWhiteSpace($env:VMLOADER_DRIVER_FILENAME)) {
-    'vmloader.sys'
+    'VmLoader.sys'
 }
 else {
     $env:VMLOADER_DRIVER_FILENAME

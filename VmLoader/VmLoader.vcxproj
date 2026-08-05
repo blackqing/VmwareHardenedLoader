@@ -155,8 +155,13 @@
       <AdditionalDependencies>ksecdd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>if not exist "$(ProjectDir)..\bin" mkdir "$(ProjectDir)..\bin"
-copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\vmloader.sys"</Command>
+      <Command>
+if not exist "$(ProjectDir)..\bin" mkdir "$(ProjectDir)..\bin"
+if not exist "$(ProjectDir)..\bin\$(PlatformTarget)" mkdir "$(ProjectDir)..\bin\$(PlatformTarget)"
+if not exist "$(ProjectDir)..\bin\$(PlatformTarget)\$(Configuration)" mkdir "$(ProjectDir)..\bin\$(PlatformTarget)\$(Configuration)"
+copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\$(PlatformTarget)\$(Configuration)\$(TargetName)$(TargetExt)"
+copy /Y "$(OutDir)$(TargetName).pdb" "$(ProjectDir)..\bin\$(PlatformTarget)\$(Configuration)\$(TargetName).pdb"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
