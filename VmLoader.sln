@@ -7,30 +7,24 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VmLoader", "VmLoader\VmLoad
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM64 = Debug|ARM64
 		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
+		Release|ARM64 = Release|ARM64
 		Release|x64 = Release|x64
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Debug|ARM64.Build.0 = Debug|ARM64
+		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Debug|ARM64.Deploy.0 = Debug|ARM64
 		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Debug|x64.ActiveCfg = Debug|x64
 		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Debug|x64.Build.0 = Debug|x64
 		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Debug|x64.Deploy.0 = Debug|x64
-		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Debug|x86.ActiveCfg = Debug|Win32
-		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Debug|x86.Build.0 = Debug|Win32
-		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Debug|x86.Deploy.0 = Debug|Win32
+		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Release|ARM64.ActiveCfg = Release|ARM64
+		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Release|ARM64.Build.0 = Release|ARM64
+		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Release|ARM64.Deploy.0 = Release|ARM64
 		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Release|x64.ActiveCfg = Release|x64
 		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Release|x64.Build.0 = Release|x64
 		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Release|x64.Deploy.0 = Release|x64
-		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Release|x86.ActiveCfg = Release|Win32
-		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Release|x86.Build.0 = Release|Win32
-		{DA667B64-6E37-40D3-B399-6E65615B3D7F}.Release|x86.Deploy.0 = Release|Win32
-		{0F53CB6D-859E-4B19-9499-35FC90F5C693}.Debug|x64.ActiveCfg = Debug|x64
-		{0F53CB6D-859E-4B19-9499-35FC90F5C693}.Debug|x64.Build.0 = Debug|x64
-		{0F53CB6D-859E-4B19-9499-35FC90F5C693}.Debug|x86.ActiveCfg = Debug|x64
-		{0F53CB6D-859E-4B19-9499-35FC90F5C693}.Release|x64.ActiveCfg = Release|x64
-		{0F53CB6D-859E-4B19-9499-35FC90F5C693}.Release|x64.Build.0 = Release|x64
-		{0F53CB6D-859E-4B19-9499-35FC90F5C693}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

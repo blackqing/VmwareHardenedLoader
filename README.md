@@ -6,12 +6,12 @@ The driver resolves its undocumented kernel globals from signed System Informer 
 
 ## Supported systems
 
-- Windows 10 and Windows 11 x64 guests
+- Windows 10 and Windows 11 x64 or ARM64 guests
 - Visual Studio 2022
 - Windows Driver Kit 10
 - .NET SDK 9 or newer for `CustomBuildTool`
 
-The maintained build configurations are `Release|x64` and `Debug|x64`.
+The maintained build configurations are `Release|x64`, `Debug|x64`, `Release|ARM64`, and `Debug|ARM64`.
 
 ## Dynamic data
 
@@ -44,6 +44,8 @@ For a debug build, use:
 msbuild VmLoader.sln /m /t:Rebuild /p:Configuration=Debug /p:Platform=x64
 ```
 
+Use `/p:Platform=ARM64` with either configuration to cross-build the ARM64 driver. The dynamic-data preparation tools still run as x64 host utilities and generate a shared data set containing both AMD64 and ARM64 records.
+
 Before C/C++ compilation, the project automatically performs these steps:
 
 1. Downloads the latest manifest from `https://github.com/HLND2T/kphtools/releases/latest/download/kphdyn.xml` into a temporary file.
@@ -72,13 +74,15 @@ Back up `kph.key` and `public.key` together. If exactly one file is present, the
 
 ### Build outputs
 
-The build publishes exactly these runtime files under `bin`:
+The x64 build publishes these runtime files under `bin`:
 
 ```text
 bin\vmloader.sys
 bin\dyndata.bin
 bin\dyndata.sig
 ```
+
+ARM64 builds publish the same file set under `bin\ARM64` so they do not overwrite x64 artifacts.
 
 `vmloader.sys` remains unsigned. Sign it with a test or production code-signing certificate before loading it.
 
@@ -150,7 +154,7 @@ For disposable test VMs, enable test-signing mode from an elevated Command Promp
 bcdedit /set testsigning on
 ```
 
-Restart Windows after changing the boot setting. Sign `bin\vmloader.sys` with a trusted test certificate before loading it. Disable test-signing mode after testing with:
+Restart Windows after changing the boot setting. Sign `bin\vmloader.sys` for x64 or `bin\ARM64\vmloader.sys` for ARM64 with a trusted test certificate before loading it. Disable test-signing mode after testing with:
 
 ```bat
 bcdedit /set testsigning off
@@ -189,7 +193,7 @@ Do not install VMware Tools in the test guest if the objective is to minimize VM
 - The driver depends on undocumented Windows kernel globals and firmware provider structures.
 - A Windows update can change those internals even when both RVAs are available.
 - The driver filters selected firmware and PnP observations only; it does not remove all virtualization indicators.
-- Only x64 Release and Debug builds are supported.
+- x64 and ARM64 Release and Debug builds are supported; ARM64 runtime behavior still depends on undocumented kernel layouts and must be validated on the target Windows build.
 
 ## Dependencies
 
