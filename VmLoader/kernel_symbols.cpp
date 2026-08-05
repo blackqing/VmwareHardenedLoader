@@ -1,6 +1,9 @@
 extern "C" {
 #include <kphdyndata.h>
 #include <kphdynverify.h>
+
+extern PLIST_ENTRY PsLoadedModuleList;
+extern PERESOURCE PsLoadedModuleResource;
 }
 
 #include "kernel_symbols.h"
@@ -10,10 +13,11 @@ extern "C" {
 #include "..\shared\symbol_config.h"
 #include <vmloader_dyndata_public_key.h>
 
-extern "C" NTSYSAPI PVOID NTAPI RtlPcToFileHeader(
-	_In_ PVOID PcValue,
-	_Out_ PVOID* BaseOfImage);
-extern "C" NTSYSAPI PIMAGE_NT_HEADERS NTAPI RtlImageNtHeader(_In_ PVOID Base);
+extern "C" NTSYSAPI NTSTATUS NTAPI RtlImageNtHeaderEx(
+	_In_ ULONG Flags,
+	_In_ PVOID Base,
+	_In_ ULONG64 Size,
+	_Out_ PIMAGE_NT_HEADERS* OutHeaders);
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text(PAGE, VmLoaderLoadKernelSymbols)
@@ -24,6 +28,19 @@ namespace {
 constexpr ULONG kPoolTag = 'dDyV';
 constexpr ULONG kMaximumDynDataLength = 8u * 1024u * 1024u;
 constexpr ULONG kMaximumSignatureLength = 1024u;
+
+struct VmLoaderKldrDataTableEntryPrefix {
+	LIST_ENTRY InLoadOrderLinks;
+	PVOID ExceptionTable;
+	ULONG ExceptionTableSize;
+	PVOID GpValue;
+	PVOID NonPagedDebugInfo;
+	PVOID DllBase;
+	PVOID EntryPoint;
+	ULONG SizeOfImage;
+	UNICODE_STRING FullDllName;
+	UNICODE_STRING BaseDllName;
+};
 
 void FreeBuffer(_In_opt_ PVOID Buffer) {
 	if (Buffer) {
@@ -574,22 +591,53 @@ NTSTATUS ResolveExternalConfig(
 NTSTATUS FindRunningKernel(
 	_Out_ PVOID* NtosBase,
 	_Out_ PIMAGE_NT_HEADERS* NtHeader) {
-	UNICODE_STRING routine_name;
-	RtlInitUnicodeString(&routine_name, L"NtOpenFile");
-	PVOID routine = MmGetSystemRoutineAddress(&routine_name);
-	PVOID ntos_base = nullptr;
-	if (!routine || !RtlPcToFileHeader(routine, &ntos_base) || !ntos_base) {
-		return STATUS_NOT_FOUND;
+	*NtosBase = nullptr;
+	*NtHeader = nullptr;
+
+	UNICODE_STRING kernel_name = RTL_CONSTANT_STRING(L"ntoskrnl.exe");
+	NTSTATUS status = STATUS_NOT_FOUND;
+
+	KeEnterCriticalRegion();
+	if (!ExAcquireResourceSharedLite(PsLoadedModuleResource, TRUE)) {
+		KeLeaveCriticalRegion();
+		return STATUS_RESOURCE_NOT_OWNED;
 	}
 
-	PIMAGE_NT_HEADERS nt_header = RtlImageNtHeader(ntos_base);
-	if (!nt_header || nt_header->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
-		return STATUS_INVALID_IMAGE_FORMAT;
+	for (PLIST_ENTRY link = PsLoadedModuleList->Flink;
+		link != PsLoadedModuleList;
+		link = link->Flink) {
+		auto* entry = CONTAINING_RECORD(
+			link, VmLoaderKldrDataTableEntryPrefix, InLoadOrderLinks);
+		if (!RtlEqualUnicodeString(&entry->BaseDllName, &kernel_name, TRUE)) {
+			continue;
+		}
+
+		__try {
+			PIMAGE_NT_HEADERS nt_header = nullptr;
+			status = RtlImageNtHeaderEx(
+				0, entry->DllBase, entry->SizeOfImage, &nt_header);
+			if (NT_SUCCESS(status)) {
+				if (!RTL_CONTAINS_FIELD(&nt_header->OptionalHeader,
+					nt_header->FileHeader.SizeOfOptionalHeader, SizeOfImage) ||
+					nt_header->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+					status = STATUS_INVALID_IMAGE_FORMAT;
+				}
+				else {
+					*NtosBase = entry->DllBase;
+					*NtHeader = nt_header;
+				}
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			status = GetExceptionCode();
+		}
+
+		break;
 	}
 
-	*NtosBase = ntos_base;
-	*NtHeader = nt_header;
-	return STATUS_SUCCESS;
+	ExReleaseResourceLite(PsLoadedModuleResource);
+	KeLeaveCriticalRegion();
+	return status;
 }
 
 } // namespace

@@ -33,7 +33,7 @@ Defines the registry key names and schema version shared between the driver and 
 
 ### Kernel symbol validation (`kernel_symbols.cpp`)
 
-Reads six DWORD values from the `Parameters` subkey, validates schema version, then resolves `ntoskrnl.exe` base via `MmGetSystemRoutineAddress("NtOpenFile")` → `RtlPcToFileHeader`. Confirms the running kernel's PE timestamp/image size/checksum match the registry values. Finally validates each RVA falls within a writable, non-executable section (`RvaInWritableDataSection`). Returns virtual addresses (`ntos_base + rva`) for `ExpFirmwareTableResource` and `ExpFirmwareTableProviderListHead`.
+Locates `ntoskrnl.exe` by traversing `PsLoadedModuleList` under the shared `PsLoadedModuleResource` lock, then validates its bounded PE headers. Loads signed external KPH dynamic data with an embedded fallback and matches it against the running kernel's machine, timestamp, and image size. Finally validates each resolved RVA falls within a writable, non-executable section (`RvaInWritableDataSection`) before returning virtual addresses for `ExpFirmwareTableResource` and `ExpFirmwareTableProviderListHead`.
 
 ### Firmware hiding (`firmware_hook.cpp`)
 
@@ -56,6 +56,6 @@ A registry callback (`CmRegisterCallbackEx`) that blocks user-mode enumeration o
 ## Key constraints
 
 - The driver depends on undocumented Windows kernel internals (`ExpFirmwareTableResource`, `ExpFirmwareTableProviderListHead`, the `SYSTEM_FIRMWARE_TABLE_HANDLER` struct layout). These can change across Windows builds.
-- Only x64 Release builds are tested and supported. ARM/ARM64/Debug configs exist in the vcxproj but are not validated.
+- Only x64 Debug/Release builds are tested and supported. ARM64 configs exist in the vcxproj but are not validated.
 - The driver requires test-signing mode (`bcdedit /set testsigning on`).
-- Windows 10 or higher, 32-bit or 64-bit are supported.
+- Windows 10 or higher (x64/ARM64) are supported.
