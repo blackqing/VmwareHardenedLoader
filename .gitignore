@@ -341,3 +341,5 @@ bin/*
 !bin/uninstall.bat
 !bin/install.ps1
 !bin/install.bat
+!bin/test_signing.ps1
+!bin/test_signing.bat
