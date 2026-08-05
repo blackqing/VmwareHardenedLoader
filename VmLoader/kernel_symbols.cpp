@@ -608,7 +608,7 @@ NTSTATUS ResolveExternalConfig(
 	return status;
 }
 
-NTSTATUS FindRunningKernel(
+NTSTATUS FindKernelIdentity(
 	_Out_ VmLoaderKernelIdentity* Kernel) {
 	RtlZeroMemory(Kernel, sizeof(*Kernel));
 	NTSTATUS status = STATUS_NOT_FOUND;
@@ -680,7 +680,7 @@ NTSTATUS VmLoaderLoadKernelSymbols(
 	RtlZeroMemory(Symbols, sizeof(*Symbols));
 
 	VmLoaderKernelIdentity kernel = {};
-	NTSTATUS status = FindRunningKernel(&kernel);
+	NTSTATUS status = FindKernelIdentity(&kernel);
 	if (!NT_SUCCESS(status)) {
 		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: running kernel identity unavailable: 0x%08X\n", status);
