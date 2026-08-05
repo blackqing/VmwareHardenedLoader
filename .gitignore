@@ -17,6 +17,7 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
+ARM64/
 x64/
 x86/
 bld/
@@ -328,3 +329,18 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
+# Packaged artifacts
+bin/*.sys
+bin/*.bin
+bin/*.sig
+
+# Track the installer while keeping all other packaged artifacts ignored.
+!bin/
+bin/*
+!bin/uninstall.ps1
+!bin/uninstall.bat
+!bin/install.ps1
+!bin/install.bat
+!bin/test_signing.ps1
+!bin/test_signing.bat

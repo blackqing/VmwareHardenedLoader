@@ -1,14 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
@@ -40,24 +32,10 @@
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <MinimumVisualStudioVersion>12.0</MinimumVisualStudioVersion>
     <Configuration>Debug</Configuration>
-    <Platform Condition="'$(Platform)' == ''">Win32</Platform>
+    <Platform Condition="'$(Platform)' == ''">x64</Platform>
     <RootNamespace>VmLoader</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <TargetVersion>Windows10</TargetVersion>
-    <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
-    <ConfigurationType>Driver</ConfigurationType>
-    <DriverType>WDM</DriverType>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <TargetVersion>Windows10</TargetVersion>
-    <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
-    <ConfigurationType>Driver</ConfigurationType>
-    <DriverType>WDM</DriverType>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -66,7 +44,8 @@
     <DriverType>WDM</DriverType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <TargetVersion>Windows7</TargetVersion>
+    <TargetVersion>Windows10</TargetVersion>
+    <KmdfVersion>1.15</KmdfVersion>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
     <ConfigurationType>Driver</ConfigurationType>
@@ -96,12 +75,21 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'" Label="Configuration">
     <TargetVersion>Windows10</TargetVersion>
+    <KmdfVersion>1.15</KmdfVersion>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>WDM</DriverType>
+    <DriverTargetPlatform>Desktop</DriverTargetPlatform>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup Condition="'$(Platform)'=='x64' Or '$(Platform)'=='ARM64'">
+    <EnableTestSign>false</EnableTestSign>
+    <SignMode></SignMode>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='x64' Or '$(Platform)'=='ARM64'">
+    <VmLoaderPublishDirectory>$(ProjectDir)..\bin</VmLoaderPublishDirectory>
+  </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
@@ -109,14 +97,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <EnableInf2cat>false</EnableInf2cat>
+    <IncludePath>$(VC_IncludePath);$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
@@ -131,33 +115,78 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <EnableInf2cat>false</EnableInf2cat>
+    <IncludePath>$(VC_IncludePath);$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <EnableInf2cat>false</EnableInf2cat>
+    <IncludePath>$(VC_IncludePath);$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../capstone/include/capstone/;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64' Or '$(Platform)'=='ARM64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\shared;$(ProjectDir)..\thirdparty\systeminformer\kphlib\include;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>..\x64\Release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>capstone_static_winkernel.lib;ntstrsafe.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ksecdd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy $(OutDir)$(TargetName)$(TargetExt) "..\bin\vmloader.sys"</Command>
+      <Command>
+if not exist "$(VmLoaderPublishDirectory)" mkdir "$(VmLoaderPublishDirectory)"
+if exist "$(OutDir)$(TargetName)$(TargetExt)" copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(VmLoaderPublishDirectory)\$(TargetName)$(TargetExt)"
+if exist "$(OutDir)$(TargetName).pdb" copy /Y "$(OutDir)$(TargetName).pdb" "$(VmLoaderPublishDirectory)\$(TargetName).pdb"
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <Inf Include="VmLoader.inf" />
-  </ItemGroup>
   <ItemGroup>
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cs_driver_mm.c" />
-    <ClCompile Include="kernel_stl.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="driver.cpp" />
+    <ClCompile Include="firmware_hook.cpp" />
+    <ClCompile Include="kernel_symbols.cpp" />
+    <ClCompile Include="pnp_hook.cpp" />
+    <ClCompile Include="registry_cleanup.cpp" />
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyndata.c" />
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyn.c" />
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdynverify.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="debug_print.h" />
+    <ClInclude Include="firmware_hook.h" />
+    <ClInclude Include="kernel_symbols.h" />
+    <ClInclude Include="pnp_hook.h" />
+    <ClInclude Include="registry_cleanup.h" />
+    <ClInclude Include="..\shared\symbol_config.h" />
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyndata.h" />
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyn.h" />
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdynverify.h" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Platform)'=='x64' Or '$(Platform)'=='ARM64'">
+    <MessageCompile Include="..\thirdparty\systeminformer\kphlib\sistatus.mc">
+      <GeneratedHeaderPath>true</GeneratedHeaderPath>
+      <HeaderFilePath>$(IntDir)</HeaderFilePath>
+      <GeneratedRcAndMessagesPath>true</GeneratedRcAndMessagesPath>
+      <RCFilePath>$(IntDir)</RCFilePath>
+      <SetCustomerbit>true</SetCustomerbit>
+      <TerminateMessageWithNull>true</TerminateMessageWithNull>
+      <UnicodeMessageInBinFile>true</UnicodeMessageInBinFile>
+      <UnicodeInputFile>true</UnicodeInputFile>
+    </MessageCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PrepareDynData.ps1" />
+  </ItemGroup>
+  <Target Name="PrepareVmLoaderDynData"
+          BeforeTargets="ClCompile"
+          Condition="'$(Platform)'=='x64' Or '$(Platform)'=='ARM64'">
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)PrepareDynData.ps1&quot; -RepositoryRoot &quot;$(ProjectDir)..&quot; -ProjectDirectory &quot;$(ProjectDir).&quot; -IntermediateDirectory &quot;$(IntDir).&quot; -OutputDirectory &quot;$(VmLoaderPublishDirectory)&quot;" />
+  </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

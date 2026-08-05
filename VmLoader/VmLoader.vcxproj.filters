@@ -19,19 +19,66 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Inf Include="VmLoader.inf">
-      <Filter>Driver Files</Filter>
-    </Inf>
+    <ClCompile Include="driver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="firmware_hook.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="kernel_symbols.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pnp_hook.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="registry_cleanup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyndata.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdyn.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdynverify.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cs_driver_mm.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="kernel_stl.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="debug_print.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="firmware_hook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="kernel_symbols.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pnp_hook.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="registry_cleanup.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\symbol_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyndata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdynverify.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <MessageCompile Include="..\thirdparty\systeminformer\kphlib\sistatus.mc">
+      <Filter>Driver Files</Filter>
+    </MessageCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PrepareDynData.ps1" />
   </ItemGroup>
 </Project>
