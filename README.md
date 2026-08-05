@@ -74,7 +74,7 @@ Back up `kph.key` and `public.key` together. If exactly one file is present, the
 
 ### Build outputs
 
-The x64 build publishes these runtime files under `bin`:
+Both x64 and ARM64 builds publish these runtime files under `bin`:
 
 ```text
 bin\vmloader.sys
@@ -82,7 +82,7 @@ bin\dyndata.bin
 bin\dyndata.sig
 ```
 
-ARM64 builds publish the same file set under `bin\ARM64` so they do not overwrite x64 artifacts.
+The build target's driver, dynamic-data files, and PDB are copied to the same directory as the install scripts. Building another architecture or configuration locally overwrites the previous generated artifacts in `bin`; the CI workflow builds each target in an isolated job and packages it immediately.
 
 `vmloader.sys` remains unsigned. Sign it with a test or production code-signing certificate before loading it.
 
@@ -154,7 +154,7 @@ For disposable test VMs, enable test-signing mode from an elevated Command Promp
 bcdedit /set testsigning on
 ```
 
-Restart Windows after changing the boot setting. Sign `bin\vmloader.sys` for x64 or `bin\ARM64\vmloader.sys` for ARM64 with a trusted test certificate before loading it. Disable test-signing mode after testing with:
+Restart Windows after changing the boot setting. Sign `bin\vmloader.sys` with a trusted test certificate before loading either x64 or ARM64 builds. Disable test-signing mode after testing with:
 
 ```bat
 bcdedit /set testsigning off
@@ -199,7 +199,7 @@ Do not install VMware Tools in the test guest if the objective is to minimize VM
 
 [System Informer](https://github.com/hzqst/systeminformer/) as submodule for KPH dynamic data and the `CustomBuildTool` and `CustomSignTool` utilities.
 
-[kphtools](https://github.com/HLND2T/kphtools) as private symbol source that provide RVA for `ExpFirmwareTableResource` && `ExpFirmwareTableProviderListHead`.
+[kphtools](https://github.com/HLND2T/kphtools) as symbol source that provides RVA for `nt!ExpFirmwareTableResource` && `nt!ExpFirmwareTableProviderListHead`.
 
 ## License
 

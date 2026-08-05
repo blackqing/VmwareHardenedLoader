@@ -87,11 +87,8 @@
     <EnableTestSign>false</EnableTestSign>
     <SignMode></SignMode>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='x64'">
+  <PropertyGroup Condition="'$(Platform)'=='x64' Or '$(Platform)'=='ARM64'">
     <VmLoaderPublishDirectory>$(ProjectDir)..\bin</VmLoaderPublishDirectory>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='ARM64'">
-    <VmLoaderPublishDirectory>$(ProjectDir)..\bin\ARM64</VmLoaderPublishDirectory>
   </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
