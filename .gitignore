@@ -333,3 +333,8 @@ ASALocalRun/
 bin/*.sys
 bin/*.bin
 bin/*.sig
+
+# Track the installer while keeping all other packaged artifacts ignored.
+!bin/
+bin/*
+!bin/install.ps1
