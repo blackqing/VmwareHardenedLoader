@@ -103,7 +103,7 @@
     <DriverType>WDM</DriverType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
     <EnableTestSign>false</EnableTestSign>
     <SignMode></SignMode>
   </PropertyGroup>
@@ -122,6 +122,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <EnableInf2cat>false</EnableInf2cat>
+    <IncludePath>$(VC_IncludePath);$(ProjectDir);$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
@@ -140,7 +142,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
   </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\shared;$(ProjectDir)..\thirdparty\systeminformer\kphlib\include;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -173,7 +175,7 @@ copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\vmloader.sys"<
     <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdyn.h" />
     <ClInclude Include="..\thirdparty\systeminformer\kphlib\include\kphdynverify.h" />
   </ItemGroup>
-  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <ItemGroup Condition="'$(Platform)'=='x64'">
     <MessageCompile Include="..\thirdparty\systeminformer\kphlib\sistatus.mc">
       <GeneratedHeaderPath>true</GeneratedHeaderPath>
       <HeaderFilePath>$(IntDir)</HeaderFilePath>
@@ -190,7 +192,7 @@ copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\vmloader.sys"<
   </ItemGroup>
   <Target Name="PrepareVmLoaderDynData"
           BeforeTargets="ClCompile"
-          Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+          Condition="'$(Platform)'=='x64'">
     <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(ProjectDir)PrepareDynData.ps1&quot; -RepositoryRoot &quot;$(ProjectDir)..&quot; -ProjectDirectory &quot;$(ProjectDir).&quot; -IntermediateDirectory &quot;$(IntDir).&quot; -OutputDirectory &quot;$(ProjectDir)..\bin&quot;" />
   </Target>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

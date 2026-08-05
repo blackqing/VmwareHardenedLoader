@@ -11,7 +11,7 @@ The driver resolves its undocumented kernel globals from signed System Informer 
 - Windows Driver Kit 10
 - .NET SDK 9 or newer for `CustomBuildTool`
 
-Only `Release|x64` is maintained and verified by the current build configuration.
+The maintained build configurations are `Release|x64` and `Debug|x64`.
 
 ## Dynamic data
 
@@ -36,6 +36,12 @@ Open a Visual Studio 2022 Developer Command Prompt with the WDK installed, then 
 
 ```bat
 msbuild VmLoader.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
+```
+
+For a debug build, use:
+
+```bat
+msbuild VmLoader.sln /m /t:Rebuild /p:Configuration=Debug /p:Platform=x64
 ```
 
 Before C/C++ compilation, the project automatically performs these steps:
@@ -183,7 +189,7 @@ Do not install VMware Tools in the test guest if the objective is to minimize VM
 - The driver depends on undocumented Windows kernel globals and firmware provider structures.
 - A Windows update can change those internals even when both RVAs are available.
 - The driver filters selected firmware and PnP observations only; it does not remove all virtualization indicators.
-- Only x64 Release builds are supported.
+- Only x64 Release and Debug builds are supported.
 
 ## License
 
