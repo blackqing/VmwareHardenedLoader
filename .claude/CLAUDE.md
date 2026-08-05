@@ -1,61 +1,45 @@
 # CLAUDE.md
 
-This file provides guidance to AI tools when working with code in this repository.
+This file provides guidance to coding agents working in this repository.
 
-## Build
+## Serena memories (progressive disclosure)
 
-Open a Visual Studio 2022 Developer Command Prompt with the WDK installed, then:
+1. Activate this repository in Serena at agent startup, then use `list_memories` to discover the available memories by name. Do not load every memory by default.
+2. Read `mem:core` first. It is the graph root for the project purpose, source map, driver lifecycle, dynamic-data trust model, and runtime constraints.
+3. Follow only the references needed for the current task:
+   - `mem:tech_stack` — toolchain, dependency submodule, generated artifacts, and supported configurations.
+   - `mem:suggested_commands` — build, preparation, registry, test-signing, and diagnostic commands; read before executing project commands.
+   - `mem:conventions` — kernel coding conventions, hook lifecycle invariants, input validation, and safety constraints; read before changing code.
+   - `mem:task_completion` — build/runtime verification and handoff requirements; read before declaring implementation work complete.
+   - `mem:memory_maintenance` — memory graph structure, retention criteria, and maintenance actions; read when creating or updating memories.
+4. If memories are missing, stale, or insufficient, inspect the relevant source files directly. Persist only stable, non-obvious project knowledge, and keep memory references accurate with Serena's `write_memory`, `edit_memory`, or `delete_memory` operations.
 
-```bat
-msbuild VmLoader.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
-```
+## Repository context (prefer memories)
 
-The post-build step copies `vmloader.sys` to `bin\`.
+The high-level architecture and invariants are maintained in `mem:core`; this file intentionally keeps only the navigation points needed for discovery:
 
-Only `Release|x64` has a post-build event and include path configuration in the vcxproj. Other platform/config combos exist in the solution but are not actively maintained for output.
+- Project purpose, source map, driver lifecycle, and dynamic-data security model: `mem:core`.
+- Toolchain, System Informer dependency, and generated outputs: `mem:tech_stack`.
+- Build and runtime commands: `mem:suggested_commands`.
+- Code and safety rules for kernel hooks and symbol handling: `mem:conventions`.
+- Completion verification and handoff gate: `mem:task_completion`.
 
-## Architecture
+## Source-file entry points when memories are insufficient
 
-This is a Windows kernel driver (WDM) that hides VMware presence from guest OS queries.
+- `README.md` — user-facing overview, build prerequisites, dynamic-data preparation, runtime loading, and limitations.
+- `VmLoader/driver.cpp` — `DriverEntry` orchestration and reverse-order unload.
+- `VmLoader/kernel_symbols.cpp/.h` — running-kernel discovery, signed/embedded KPH dynamic-data lookup, and PE/RVA validation.
+- `VmLoader/firmware_hook.cpp/.h` — firmware provider handler replacement for FIRM, ACPI, and RSMB.
+- `VmLoader/pnp_hook.cpp/.h` — user-mode registry callback for VMware PCI, USB, and HDAUDIO enumeration.
+- `shared/symbol_config.h` — service parameter names shared by the driver and external tools.
+- `VmLoader/PrepareDynData.ps1` — KPH manifest validation, dynamic-data generation/signing/verification, and artifact publication.
+- `VmLoader/VmLoader.vcxproj` and `VmLoader.sln` — maintained build entry points.
+- `thirdparty/systeminformer/` — System Informer git submodule providing KPH libraries and build/signing tools; avoid editing vendor or generated files unless the task explicitly requires it.
 
-### Registration contract (`shared/symbol_config.h`)
+## Important rules
 
-Defines the registry key names and schema version shared between the driver and external tools. Symbols are written as DWORD RVAs under `HKLM\SYSTEM\CurrentControlSet\Services\vmloader\Parameters`. The driver validates a schema version, PE timestamp, image size, and checksum before trusting any RVA.
-
-### Driver entry (`driver.cpp`)
-
-`DriverEntry` does three things in order, each on failure preventing later steps:
-1. `VmLoaderLoadKernelSymbols` — reads and validates symbol RVAs from registry
-2. `VmLoaderInstallFirmwareHooks` — replaces firmware table handler function pointers
-3. `VmLoaderInstallPnpHooks` — registers a `CmRegisterCallbackEx` at altitude 389999
-
-`DriverUnload` tears down in reverse: PnP hooks, then firmware hooks.
-
-### Kernel symbol validation (`kernel_symbols.cpp`)
-
-Locates `ntoskrnl.exe` by traversing `PsLoadedModuleList` under the shared `PsLoadedModuleResource` lock, then validates its bounded PE headers. Loads signed external KPH dynamic data with an embedded fallback and matches it against the running kernel's machine, timestamp, and image size. Finally validates each resolved RVA falls within a writable, non-executable section (`RvaInWritableDataSection`) before returning virtual addresses for `ExpFirmwareTableResource` and `ExpFirmwareTableProviderListHead`.
-
-### Firmware hiding (`firmware_hook.cpp`)
-
-Walks the `ExpFirmwareTableProviderListHead` linked list under `ExpFirmwareTableResource` ERESOURCE lock. Replaces three provider handlers:
-
-- **'FIRM'** → `FilterFirm`: Replaces "VMware"→"System" and "Virtual"→"Generic" in raw SMBIOS table buffers.
-- **'ACPI'** → `FilterAcpi`: Hides WAET table entirely (returns `STATUS_NOT_FOUND` for single-query, removes from enumeration), string-replaces "VMware"/"VMWARE"→"System"/"SYSTEM", and recomputes the ACPI checksum.
-- **'RSMB'** → `FilterRsmb`: Same string replacement on the raw SMBIOS table.
-
-String replacement (`ReplaceInPlace`) scans byte-by-byte with `RtlCompareMemory`, replaces in-place, and handles overlapping matches by advancing past each replacement.
-
-### PnP device hiding (`pnp_hook.cpp`)
-
-A registry callback (`CmRegisterCallbackEx`) that blocks user-mode enumeration of VMware hardware:
-
-- **Post-enumerate**: After a successful `RegNtPostEnumerateKey` on `\Enum\PCI`, `\Enum\USB`, or `\Enum\HDAUDIO` branches, if the returned key name contains `VEN_15AD` (VMware PCI vendor) or `VID_0E0F` (VMware USB vendor), advances the enumeration index past it via `AdvancePastHidden` — re-enumerating with `ZwEnumerateKey` until a non-VMware key is found.
-- **Pre-open**: Returns `STATUS_OBJECT_NAME_NOT_FOUND` for any `RegNtPreOpenKey`/`RegNtPreOpenKeyEx` whose complete path targets a VMware subkey under those same enum branches.
-- Only filters user-mode callers (`ExGetPreviousMode() != UserMode` is a no-op).
-
-## Key constraints
-
-- The driver depends on undocumented Windows kernel internals (`ExpFirmwareTableResource`, `ExpFirmwareTableProviderListHead`, the `SYSTEM_FIRMWARE_TABLE_HANDLER` struct layout). These can change across Windows builds.
-- Only x64 Debug/Release builds are tested and supported. ARM64 configs exist in the vcxproj but are not validated.
-- The driver requires test-signing mode (`bcdedit /set testsigning on`).
-- Windows 10 or higher (x64/ARM64) are supported.
+- Treat undocumented Windows kernel globals and firmware-provider layouts as build- and version-sensitive. Keep changes local and preserve rollback behavior.
+- Treat kernel symbol data, PE metadata, signatures, file paths, and resolved RVAs as untrusted input; preserve the validation rules documented in `mem:core` and `mem:conventions`.
+- The maintained targets are x64 Debug and Release. ARM64 configurations exist but are not validated for output.
+- Test-signing mode is required for local driver loading; never commit private signing keys or generated secrets.
+- Use the verification gate in `mem:task_completion` for implementation work. If required build, network, WDK, or disposable VM prerequisites are unavailable, report that limitation explicitly rather than claiming full validation.
