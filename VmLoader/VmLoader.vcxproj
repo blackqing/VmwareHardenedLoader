@@ -142,6 +142,11 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\shared;$(ProjectDir)..\thirdparty\systeminformer\kphlib\include;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -168,6 +173,7 @@ copy /Y "$(OutDir)$(TargetName)$(TargetExt)" "$(ProjectDir)..\bin\vmloader.sys"<
     <ClCompile Include="..\thirdparty\systeminformer\kphlib\kphdynverify.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="debug_print.h" />
     <ClInclude Include="firmware_hook.h" />
     <ClInclude Include="kernel_symbols.h" />
     <ClInclude Include="pnp_hook.h" />

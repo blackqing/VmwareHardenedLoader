@@ -1,5 +1,6 @@
 #include <ntddk.h>
 
+#include "debug_print.h"
 #include "firmware_hook.h"
 #include "kernel_symbols.h"
 #include "pnp_hook.h"
@@ -24,7 +25,7 @@ extern "C" NTSTATUS DriverEntry(
 	VmLoaderKernelSymbols symbols = {};
 	NTSTATUS status = VmLoaderLoadKernelSymbols(RegistryPath, &symbols);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: symbol configuration rejected: 0x%08X\n", status);
 		return status;
 	}
@@ -32,14 +33,14 @@ extern "C" NTSTATUS DriverEntry(
 	status = VmLoaderInstallFirmwareHooks(
 		symbols.FirmwareTableResource, symbols.FirmwareTableProviderListHead);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: firmware hook installation failed: 0x%08X\n", status);
 		return status;
 	}
 
 	status = VmLoaderInstallPnpHooks(DriverObject);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: pnp hook installation failed: 0x%08X\n", status);
 		VmLoaderRemoveFirmwareHooks();
 		return status;
@@ -47,7 +48,7 @@ extern "C" NTSTATUS DriverEntry(
 
 	status = VmLoaderCleanupRegistryEntries();
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: reg entries cleanup failed: 0x%08X\n", status);
 		VmLoaderRemoveFirmwareHooks();
 		VmLoaderRemovePnpHooks();

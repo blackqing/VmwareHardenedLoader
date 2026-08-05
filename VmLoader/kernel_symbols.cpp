@@ -7,6 +7,7 @@ extern PERESOURCE PsLoadedModuleResource;
 }
 
 #include "kernel_symbols.h"
+#include "debug_print.h"
 
 #include <ntimage.h>
 
@@ -523,7 +524,7 @@ NTSTATUS ResolveExternalConfig(
 	HANDLE key = nullptr;
 	NTSTATUS status = OpenParametersKey(RegistryPath, &key);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: external dynamic data registry key unavailable: 0x%08X\n", status);
 		return status;
 	}
@@ -532,7 +533,7 @@ NTSTATUS ResolveExternalConfig(
 	status = QueryString(key, VMLOADER_VALUE_DYNDATA_DIRECTORY, &configured_directory);
 	ZwClose(key);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: query DynDataDirectory failed: 0x%08X\n", status);
 		return status;
 	}
@@ -541,7 +542,7 @@ NTSTATUS ResolveExternalConfig(
 	status = NormalizeDirectoryPath(&configured_directory, &directory);
 	FreeBuffer(configured_directory.Buffer);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: DynDataDirectory rejected: 0x%08X\n", status);
 		return status;
 	}
@@ -559,7 +560,7 @@ NTSTATUS ResolveExternalConfig(
 	}
 	FreeBuffer(directory.Buffer);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: external dynamic data path construction failed: 0x%08X\n", status);
 		FreeBuffer(config_path.Buffer);
 		return status;
@@ -568,7 +569,7 @@ NTSTATUS ResolveExternalConfig(
 	status = ReadFileWithLimit(&config_path, kMaximumDynDataLength, &config, &config_length);
 	FreeBuffer(config_path.Buffer);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: read external dyndata.bin failed: 0x%08X\n", status);
 		FreeBuffer(signature_path.Buffer);
 		return status;
@@ -578,7 +579,7 @@ NTSTATUS ResolveExternalConfig(
 		&signature, &signature_length);
 	FreeBuffer(signature_path.Buffer);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: read external dyndata.sig failed: 0x%08X\n", status);
 		FreeBuffer(config);
 		return status;
@@ -592,7 +593,7 @@ NTSTATUS ResolveExternalConfig(
 		signature_length);
 	FreeBuffer(signature);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: external dynamic data signature rejected: 0x%08X\n", status);
 		FreeBuffer(config);
 		return status;
@@ -602,7 +603,7 @@ NTSTATUS ResolveExternalConfig(
 		config_length, Kernel, Symbols);
 	FreeBuffer(config);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: external dynamic data lookup rejected: 0x%08X\n", status);
 	}
 	return status;
@@ -682,34 +683,34 @@ NTSTATUS VmLoaderLoadKernelSymbols(
 	VmLoaderKernelIdentity kernel = {};
 	NTSTATUS status = FindKernelIdentity(&kernel);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: running kernel identity unavailable: 0x%08X\n", status);
 		return status;
 	}
-	DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_INFO_LEVEL,
+	VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_INFO_LEVEL,
 		"VmLoader: running kernel %wZ uses dynamic data class %hu\n",
 		&kernel.ImageName, kernel.DynDataClass);
 
 	status = ResolveExternalConfig(RegistryPath, &kernel, Symbols);
 	if (NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_INFO_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_INFO_LEVEL,
 			"VmLoader: using signed external dynamic data\n");
 		return STATUS_SUCCESS;
 	}
 
-	DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+	VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 		"VmLoader: external dynamic data failed (0x%08X), trying embedded data\n", status);
 	RtlZeroMemory(Symbols, sizeof(*Symbols));
 	status = ResolveFromConfig(reinterpret_cast<PKPH_DYN_CONFIG>(const_cast<BYTE*>(KphDynConfig)),
 		KphDynConfigLength, &kernel, Symbols);
 	if (!NT_SUCCESS(status)) {
-		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
+		VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: embedded dynamic data rejected: 0x%08X\n", status);
 		RtlZeroMemory(Symbols, sizeof(*Symbols));
 		return status;
 	}
 
-	DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_INFO_LEVEL,
+	VMLOADER_DBG_PRINT(DPFLTR_DEFAULT_ID, DPFLTR_INFO_LEVEL,
 		"VmLoader: using embedded dynamic data\n");
 	return STATUS_SUCCESS;
 }

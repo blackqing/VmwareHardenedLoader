@@ -45,6 +45,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="debug_print.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="firmware_hook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
