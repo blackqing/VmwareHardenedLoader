@@ -337,4 +337,7 @@ bin/*.sig
 # Track the installer while keeping all other packaged artifacts ignored.
 !bin/
 bin/*
+!bin/uninstall.ps1
+!bin/uninstall.bat
 !bin/install.ps1
+!bin/install.bat
