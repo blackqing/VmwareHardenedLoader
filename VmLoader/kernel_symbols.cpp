@@ -42,6 +42,27 @@ struct VmLoaderKldrDataTableEntryPrefix {
 	UNICODE_STRING BaseDllName;
 };
 
+struct VmLoaderKernelDescriptor {
+	USHORT DynDataClass;
+	UNICODE_STRING ImageName;
+	ULONG FieldsLength;
+};
+
+struct VmLoaderKernelIdentity {
+	USHORT DynDataClass;
+	ULONG FieldsLength;
+	PVOID ImageBase;
+	PIMAGE_NT_HEADERS NtHeader;
+	UNICODE_STRING ImageName;
+};
+
+const VmLoaderKernelDescriptor kKernelDescriptors[] = {
+	{ KPH_DYN_CLASS_NTOSKRNL, RTL_CONSTANT_STRING(L"ntoskrnl.exe"),
+		sizeof(KPH_DYN_NTOSKRNL_FIELDS) },
+	{ KPH_DYN_CLASS_NTKRLA57, RTL_CONSTANT_STRING(L"ntkrla57.exe"),
+		sizeof(KPH_DYN_NTKRLA57_FIELDS) },
+};
+
 void FreeBuffer(_In_opt_ PVOID Buffer) {
 	if (Buffer) {
 		ExFreePoolWithTag(Buffer, kPoolTag);
@@ -462,18 +483,17 @@ bool RvaInWritableDataSection(
 NTSTATUS ResolveFromConfig(
 	_In_reads_bytes_(ConfigLength) PKPH_DYN_CONFIG Config,
 	_In_ ULONG ConfigLength,
-	_In_ PVOID NtosBase,
-	_In_ PIMAGE_NT_HEADERS NtHeader,
+	_In_ const VmLoaderKernelIdentity* Kernel,
 	_Out_ VmLoaderKernelSymbols* Symbols) {
-	PKPH_DYN_NTOSKRNL_FIELDS fields = nullptr;
+	PKPH_DYN_KERNEL_FIELDS fields = nullptr;
 	NTSTATUS status = KphDynDataLookup(Config,
 		ConfigLength,
-		KPH_DYN_CLASS_NTOSKRNL,
-		NtHeader->FileHeader.Machine,
-		NtHeader->FileHeader.TimeDateStamp,
-		NtHeader->OptionalHeader.SizeOfImage,
+		Kernel->DynDataClass,
+		Kernel->NtHeader->FileHeader.Machine,
+		Kernel->NtHeader->FileHeader.TimeDateStamp,
+		Kernel->NtHeader->OptionalHeader.SizeOfImage,
 		nullptr,
-		sizeof(*fields),
+		Kernel->FieldsLength,
 		reinterpret_cast<PVOID*>(&fields));
 	if (!NT_SUCCESS(status)) {
 		return status;
@@ -485,20 +505,20 @@ NTSTATUS ResolveFromConfig(
 		return STATUS_SI_DYNDATA_UNSUPPORTED_KERNEL;
 	}
 	if (resource_rva == provider_list_rva ||
-		!RvaInWritableDataSection(NtHeader, resource_rva) ||
-		!RvaInWritableDataSection(NtHeader, provider_list_rva)) {
+		!RvaInWritableDataSection(Kernel->NtHeader, resource_rva) ||
+		!RvaInWritableDataSection(Kernel->NtHeader, provider_list_rva)) {
 		return STATUS_INVALID_ADDRESS;
 	}
 
-	Symbols->FirmwareTableResource = static_cast<PUCHAR>(NtosBase) + resource_rva;
-	Symbols->FirmwareTableProviderListHead = static_cast<PUCHAR>(NtosBase) + provider_list_rva;
+	Symbols->FirmwareTableResource = static_cast<PUCHAR>(Kernel->ImageBase) + resource_rva;
+	Symbols->FirmwareTableProviderListHead =
+		static_cast<PUCHAR>(Kernel->ImageBase) + provider_list_rva;
 	return STATUS_SUCCESS;
 }
 
 NTSTATUS ResolveExternalConfig(
 	_In_ PUNICODE_STRING RegistryPath,
-	_In_ PVOID NtosBase,
-	_In_ PIMAGE_NT_HEADERS NtHeader,
+	_In_ const VmLoaderKernelIdentity* Kernel,
 	_Out_ VmLoaderKernelSymbols* Symbols) {
 	HANDLE key = nullptr;
 	NTSTATUS status = OpenParametersKey(RegistryPath, &key);
@@ -579,7 +599,7 @@ NTSTATUS ResolveExternalConfig(
 	}
 
 	status = ResolveFromConfig(static_cast<PKPH_DYN_CONFIG>(config),
-		config_length, NtosBase, NtHeader, Symbols);
+		config_length, Kernel, Symbols);
 	FreeBuffer(config);
 	if (!NT_SUCCESS(status)) {
 		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
@@ -589,12 +609,8 @@ NTSTATUS ResolveExternalConfig(
 }
 
 NTSTATUS FindRunningKernel(
-	_Out_ PVOID* NtosBase,
-	_Out_ PIMAGE_NT_HEADERS* NtHeader) {
-	*NtosBase = nullptr;
-	*NtHeader = nullptr;
-
-	UNICODE_STRING kernel_name = RTL_CONSTANT_STRING(L"ntoskrnl.exe");
+	_Out_ VmLoaderKernelIdentity* Kernel) {
+	RtlZeroMemory(Kernel, sizeof(*Kernel));
 	NTSTATUS status = STATUS_NOT_FOUND;
 
 	KeEnterCriticalRegion();
@@ -603,36 +619,48 @@ NTSTATUS FindRunningKernel(
 		return STATUS_RESOURCE_NOT_OWNED;
 	}
 
-	for (PLIST_ENTRY link = PsLoadedModuleList->Flink;
-		link != PsLoadedModuleList;
-		link = link->Flink) {
-		auto* entry = CONTAINING_RECORD(
-			link, VmLoaderKldrDataTableEntryPrefix, InLoadOrderLinks);
-		if (!RtlEqualUnicodeString(&entry->BaseDllName, &kernel_name, TRUE)) {
-			continue;
-		}
+	for (ULONG descriptor_index = 0;
+		descriptor_index < RTL_NUMBER_OF(kKernelDescriptors);
+		++descriptor_index) {
+		const auto* descriptor = &kKernelDescriptors[descriptor_index];
+		for (PLIST_ENTRY link = PsLoadedModuleList->Flink;
+			link != PsLoadedModuleList;
+			link = link->Flink) {
+			auto* entry = CONTAINING_RECORD(
+				link, VmLoaderKldrDataTableEntryPrefix, InLoadOrderLinks);
+			if (!RtlEqualUnicodeString(&entry->BaseDllName, &descriptor->ImageName, TRUE)) {
+				continue;
+			}
 
-		__try {
-			PIMAGE_NT_HEADERS nt_header = nullptr;
-			status = RtlImageNtHeaderEx(
-				0, entry->DllBase, entry->SizeOfImage, &nt_header);
-			if (NT_SUCCESS(status)) {
-				if (!RTL_CONTAINS_FIELD(&nt_header->OptionalHeader,
-					nt_header->FileHeader.SizeOfOptionalHeader, SizeOfImage) ||
-					nt_header->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
-					status = STATUS_INVALID_IMAGE_FORMAT;
-				}
-				else {
-					*NtosBase = entry->DllBase;
-					*NtHeader = nt_header;
+			__try {
+				PIMAGE_NT_HEADERS nt_header = nullptr;
+				status = RtlImageNtHeaderEx(
+					0, entry->DllBase, entry->SizeOfImage, &nt_header);
+				if (NT_SUCCESS(status)) {
+					if (!RTL_CONTAINS_FIELD(&nt_header->OptionalHeader,
+						nt_header->FileHeader.SizeOfOptionalHeader, SizeOfImage) ||
+						nt_header->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+						status = STATUS_INVALID_IMAGE_FORMAT;
+					}
+					else {
+						Kernel->DynDataClass = descriptor->DynDataClass;
+						Kernel->FieldsLength = descriptor->FieldsLength;
+						Kernel->ImageBase = entry->DllBase;
+						Kernel->NtHeader = nt_header;
+						Kernel->ImageName = descriptor->ImageName;
+					}
 				}
 			}
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			status = GetExceptionCode();
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				status = GetExceptionCode();
+			}
+
+			break;
 		}
 
-		break;
+		if (NT_SUCCESS(status)) {
+			break;
+		}
 	}
 
 	ExReleaseResourceLite(PsLoadedModuleResource);
@@ -651,16 +679,18 @@ NTSTATUS VmLoaderLoadKernelSymbols(
 	}
 	RtlZeroMemory(Symbols, sizeof(*Symbols));
 
-	PVOID ntos_base = nullptr;
-	PIMAGE_NT_HEADERS nt_header = nullptr;
-	NTSTATUS status = FindRunningKernel(&ntos_base, &nt_header);
+	VmLoaderKernelIdentity kernel = {};
+	NTSTATUS status = FindRunningKernel(&kernel);
 	if (!NT_SUCCESS(status)) {
 		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: running kernel identity unavailable: 0x%08X\n", status);
 		return status;
 	}
+	DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_INFO_LEVEL,
+		"VmLoader: running kernel %wZ uses dynamic data class %hu\n",
+		&kernel.ImageName, kernel.DynDataClass);
 
-	status = ResolveExternalConfig(RegistryPath, ntos_base, nt_header, Symbols);
+	status = ResolveExternalConfig(RegistryPath, &kernel, Symbols);
 	if (NT_SUCCESS(status)) {
 		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_INFO_LEVEL,
 			"VmLoader: using signed external dynamic data\n");
@@ -671,7 +701,7 @@ NTSTATUS VmLoaderLoadKernelSymbols(
 		"VmLoader: external dynamic data failed (0x%08X), trying embedded data\n", status);
 	RtlZeroMemory(Symbols, sizeof(*Symbols));
 	status = ResolveFromConfig(reinterpret_cast<PKPH_DYN_CONFIG>(const_cast<BYTE*>(KphDynConfig)),
-		KphDynConfigLength, ntos_base, nt_header, Symbols);
+		KphDynConfigLength, &kernel, Symbols);
 	if (!NT_SUCCESS(status)) {
 		DbgPrintEx(DPFLTR_DEFAULT_ID, DPFLTR_ERROR_LEVEL,
 			"VmLoader: embedded dynamic data rejected: 0x%08X\n", status);

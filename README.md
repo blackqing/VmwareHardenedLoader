@@ -84,7 +84,7 @@ bin\dyndata.sig
 
 ## Runtime loading
 
-At `DriverEntry`, the driver first identifies the running `ntoskrnl.exe` base and PE metadata. It then tries dynamic data in this order:
+At `DriverEntry`, the driver first identifies the running `ntoskrnl.exe` or `ntkrla57.exe` image, its dynamic-data class, base, and PE metadata. It then tries dynamic data in this order:
 
 1. Signed external `dyndata.bin` and `dyndata.sig` from `DynDataDirectory`.
 2. The trusted v20 `KphDynConfig` compiled into the driver.
