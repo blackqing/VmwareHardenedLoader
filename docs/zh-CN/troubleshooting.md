@@ -4,7 +4,7 @@
 
 ## 疑难解答
 
-- 在编译前检查构建输出，确认已验证的固件记录数量以及 signature is valid。
+- 检查构建输出，确认`bin\VmLoader.sys`没有被Windows Defender等安全软件误报以及删除。
 - 确认 `bin\dyndata.bin` 和 `bin\dyndata.sig` 来自与驱动构建相同的密钥对。
 - 确认 `DynDataDirectory` 是 `REG_SZ` 类型的本地绝对目录，而不是文件路径。
 - 使用 DbgView 或内核调试器检查 VmLoader: 消息及报告的 NTSTATUS。（目前只有Debug构建的版本会输出DbgPrint）

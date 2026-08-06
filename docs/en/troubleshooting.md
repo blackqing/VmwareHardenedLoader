@@ -4,7 +4,7 @@
 
 ## Troubleshooting
 
-- Check build output for the validated firmware-record counts and signature is valid before compilation.
+- Make sure the `bin\VmLoader.sys` is not eliminated by Windows Defender or something else. It can be a false positive if it gets nuked.
 - Confirm that `bin\dyndata.bin` and `bin\dyndata.sig` came from the same key pair as the driver build.
 - Check `DynDataDirectory` is a `REG_SZ` local absolute directory, not a file path.
 - Use DbgView or a kernel debugger to inspect VmLoader: messages and the reported NTSTATUS. (DbgPrint is available only with Debug build)
