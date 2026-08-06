@@ -31,7 +31,7 @@ The maintained configurations are Release|x64, Debug|x64, Release|ARM64, and Deb
 
 ## Security and compatibility notes
 
-External dyndata.bin and dyndata.sig files are accepted only after signature verification with the public key compiled into the driver, exact running-kernel identity matching, required-field checks, and PE/RVA validation. The embedded v20 configuration is the fallback.
+External `dyndata.bin` and `dyndata.sig` files are accepted only after signature verification with the public key compiled into the driver, exact running-kernel identity matching, required-field checks, and PE/RVA validation. The embedded v20 configuration is the fallback.
 
 The driver depends on undocumented Windows kernel globals and firmware-provider structures. Windows updates can change those internals, and the driver filters selected observations only; it does not remove all virtualization indicators.
 
@@ -43,4 +43,4 @@ Released under the MIT License. See [LICENSE](LICENSE).
 
 [System Informer](https://github.com/hzqst/systeminformer/) is included as a submodule for KPH dynamic data and the CustomBuildTool and CustomSignTool utilities.
 
-[kphtools](https://github.com/HLND2T/kphtools) provides the symbol source and RVAs for nt!ExpFirmwareTableResource and nt!ExpFirmwareTableProviderListHead.
+[kphtools](https://github.com/HLND2T/kphtools) provides the symbol source and RVAs for `nt!ExpFirmwareTableResource` and `nt!ExpFirmwareTableProviderListHead`.
