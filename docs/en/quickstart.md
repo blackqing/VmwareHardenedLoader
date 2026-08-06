@@ -6,9 +6,9 @@ This guide explains how to use the install, test-signing, and uninstall scripts 
 
 ## Prerequisites
 
-- Complete a build by following the [build guide](build.md).
-- Ensure `bin\VmLoader.sys` exists. A normal build also produces `dyndata.bin` and `dyndata.sig`.
-- Use an elevated Command Prompt. The scripts request UAC elevation when needed, but an elevated prompt makes errors easier to see.
+- Complete a build by following the [build guide](build.md), or download latest pre-built binaries from `https://github.com/hzqst/VmwareHardenedLoader/releases`
+- Ensure `bin\VmLoader.sys` exists. A normal build also produces `bin\dyndata.bin` and `bin\dyndata.sig`.
+- Use an elevated Command Prompt. The scripts ask for UAC elevation when needed, but an elevated prompt makes errors easier to see.
 - Use test signing only in an isolated test VM, never on a production system.
 
 ## 1. Test-sign the driver
@@ -16,7 +16,6 @@ This guide explains how to use the install, test-signing, and uninstall scripts 
 From the repository root, run:
 
 ~~~bat
-cd /d D:\VmwareHardenedLoader
 bin\test_signing.bat
 ~~~
 

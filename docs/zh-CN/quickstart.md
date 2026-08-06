@@ -7,8 +7,8 @@
 ## 前置条件
 
 - 已按[构建指南](build.md)完成构建。
-- `bin` 目录中至少有 `VmLoader.sys`。正常构建还会生成 `dyndata.bin` 和 `dyndata.sig`。
-- 使用管理员权限运行命令提示符。脚本会尝试通过 UAC 自动提权，但在管理员命令提示符中运行更容易看到完整错误信息。
+- 确认 `bin\VmLoader.sys` 存在。正常构建还会生成 `bin\dyndata.bin` 和 `bin\dyndata.sig`。
+- 使用管理员权限运行命令提示符。虽然脚本会自动申请 UAC 提权，但直接管理员权限的cmd运行更容易看到完整错误信息。
 - 测试签名仅适用于隔离的测试虚拟机，不要用于生产系统。
 
 ## 1. 测试签名驱动
@@ -16,7 +16,6 @@
 在仓库根目录执行：
 
 ~~~bat
-cd /d D:\VmwareHardenedLoader
 bin\test_signing.bat
 ~~~
 
@@ -26,7 +25,7 @@ bin\test_signing.bat
 2. 将证书加入 `Root` 和 `TrustedPublisher` 信任存储。
 3. 使用 Windows SDK 的 `signtool.exe` 签名并验证 `bin\VmLoader.sys`。
 
-如果提示找不到 `signtool.exe`，请安装 Windows 10/11 SDK，或从 Visual Studio Developer PowerShell/Command Prompt 运行脚本。
+如果提示找不到 `signtool.exe`，请安装 Windows 10/11 SDK，并从 Visual Studio Developer PowerShell/Command Prompt 运行脚本。
 
 ## 2. 启用 Windows 测试签名模式
 
