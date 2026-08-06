@@ -24,6 +24,7 @@ msbuild VmLoader.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
 
 ## 文档
 
+- [快速上手：安装、测试签名与卸载](docs/zh-CN/quickstart.md)
 - [构建要求与动态数据](docs/zh-CN/build.md)
 - [运行时加载与外部动态数据](docs/zh-CN/runtime.md)
 - [驱动行为、测试签名与 VMware 配置](docs/zh-CN/behavior.md)

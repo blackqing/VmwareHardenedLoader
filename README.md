@@ -24,6 +24,7 @@ The maintained configurations are Release|x64, Debug|x64, Release|ARM64, and Deb
 
 ## Documentation
 
+- [Quick start: install, test-sign, and uninstall](docs/en/quickstart.md)
 - [Build requirements and dynamic data](docs/en/build.md)
 - [Runtime loading and external dynamic data](docs/en/runtime.md)
 - [Driver behavior, test signing, and VMware configuration](docs/en/behavior.md)
