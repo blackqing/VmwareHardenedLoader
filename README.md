@@ -29,12 +29,6 @@ The maintained configurations are Release|x64, Debug|x64, Release|ARM64, and Deb
 - [Driver behavior, test signing, and VMware configuration](docs/en/behavior.md)
 - [Troubleshooting, limitations, and dependencies](docs/en/troubleshooting.md)
 
-## Security and compatibility notes
-
-External `dyndata.bin` and `dyndata.sig` files are accepted only after signature verification with the public key compiled into the driver, exact running-kernel identity matching, required-field checks, and PE/RVA validation. The embedded v20 configuration is the fallback.
-
-The driver depends on undocumented Windows kernel globals and firmware-provider structures. Windows updates can change those internals, and the driver filters selected observations only; it does not remove all virtualization indicators.
-
 ## License
 
 Released under the MIT License. See [LICENSE](LICENSE).

@@ -29,12 +29,6 @@ msbuild VmLoader.sln /m /t:Rebuild /p:Configuration=Release /p:Platform=x64
 - [驱动行为、测试签名与 VMware 配置](docs/zh-CN/behavior.md)
 - [故障排除、限制与依赖](docs/zh-CN/troubleshooting.md)
 
-## 安全性与兼容性说明
-
-外部 `dyndata.bin` 和 `dyndata.sig` 只有在通过驱动内置公钥的签名验证、精确匹配运行中内核身份、完成必需字段检查以及 PE/RVA 验证后才会被接受。内置的 v20 配置作为回退方案。
-
-驱动依赖未公开的 Windows 内核全局变量和固件提供程序结构。Windows 更新可能改变这些内部实现；驱动只过滤选定的观察结果，不能移除所有虚拟化特征。
-
 ## 许可证
 
 本项目采用 MIT License。详见 [LICENSE](LICENSE)。

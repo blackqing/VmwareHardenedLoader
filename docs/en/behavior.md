@@ -22,7 +22,7 @@ PnP filtering applies only to user-mode callers and hides matching VMware PCI/US
 
 ## Test signing
 
-For disposable test VMs, enable test-signing mode from an elevated Command Prompt:
+For test VMs, enable test-signing mode from an elevated Command Prompt:
 
 ~~~bat
 bcdedit /set testsigning on

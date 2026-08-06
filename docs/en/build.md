@@ -43,8 +43,8 @@ The build requires HTTPS access to GitHub and may require NuGet access when rest
 
 The build produces KPH dynamic configuration version 20. It extends the System Informer v19 kernel layout with these ULONG RVAs:
 
-- ExpFirmwareTableResource
-- ExpFirmwareTableProviderListHead
+- `nt!ExpFirmwareTableResource`
+- `nt!ExpFirmwareTableProviderListHead`
 
 Each record is selected by an exact match on:
 
@@ -75,10 +75,11 @@ Both x64 and ARM64 builds publish these runtime files under bin:
 
 ~~~text
 bin\vmloader.sys
+bin\vmloader.pdb
 bin\dyndata.bin
 bin\dyndata.sig
 ~~~
 
 The build target's driver, dynamic-data files, and PDB are copied to the same directory as the install scripts. Building another architecture or configuration locally overwrites the previous generated artifacts in bin; the CI workflow builds each target in an isolated job and packages it immediately.
 
-vmloader.sys remains unsigned. Sign it with a test or production code-signing certificate before loading it.
+`vmloader.sys` remains unsigned. Sign it with a test or production code-signing certificate before loading it.

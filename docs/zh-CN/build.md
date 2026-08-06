@@ -43,8 +43,8 @@ msbuild VmLoader.sln /m /t:Rebuild /p:Configuration=Debug /p:Platform=x64
 
 构建生成 KPH 动态配置版本 20。在 System Informer v19 内核布局的基础上，新增以下 ULONG RVA：
 
-- ExpFirmwareTableResource
-- ExpFirmwareTableProviderListHead
+- `nt!ExpFirmwareTableResource`
+- `nt!ExpFirmwareTableProviderListHead`
 
 每条记录都必须按以下字段精确匹配：
 
@@ -75,10 +75,11 @@ x64 和 ARM64 构建都会在 bin 下发布以下运行时文件：
 
 ~~~text
 bin\vmloader.sys
+bin\vmloader.pdb
 bin\dyndata.bin
 bin\dyndata.sig
 ~~~
 
 构建目标会将驱动、动态数据文件和 PDB 复制到安装脚本所在的同一目录。在本地构建其他架构或配置会覆盖 bin 中之前生成的工件；CI 工作流会在隔离的 job 中构建每个目标并立即打包。
 
-vmloader.sys 保持未签名状态。加载前必须使用测试或生产代码签名证书为其签名。
+`vmloader.sys` 保持未签名状态。加载前必须使用测试或生产代码签名证书为其签名。
