@@ -28,7 +28,7 @@ PnP 过滤只适用于用户态调用者，并会在受支持的 Enum 分支下�
 bcdedit /set testsigning on
 ~~~
 
-修改启动设置后重启 Windows。加载 x64 或 ARM64 构建前，使用受信任的测试证书为 `bin\vmloader.sys` 签名 (`install.bat` 和 `install.ps1` 会自动替你签名)。
+修改启动设置后重启 Windows。加载驱动前，请先使用受信任的测试证书（ `test-signing.bat` ）为 `bin\vmloader.sys` 进行签名。
 
 测试结束后使用以下命令关闭测试签名：
 

@@ -28,7 +28,7 @@ For test VMs, enable test-signing mode from an elevated Command Prompt:
 bcdedit /set testsigning on
 ~~~
 
-Restart Windows after changing the boot setting. Sign `bin\vmloader.sys` with a trusted test certificate (`install.bat` and `install.ps1` will do it for you) before loading either x64 or ARM64 builds.
+Restart Windows after changing the boot setting. Sign `bin\vmloader.sys` with a trusted test certificate (`test-signing.bat` will do it for you) before installing driver.
 
 Disable test-signing mode after testing with:
 
