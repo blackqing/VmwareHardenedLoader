@@ -1,4 +1,4 @@
-# Troubleshooting, limitations, and dependencies
+# Troubleshooting, limitations
 
 [Back to README](../../README.md) · [简体中文](../zh-CN/troubleshooting.md)
 
