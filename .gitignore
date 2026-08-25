@@ -344,3 +344,8 @@ bin/*
 !bin/install.bat
 !bin/test_signing.ps1
 !bin/test_signing.bat
+
+# Basic Memory runtime data (notes under memory/ are tracked)
+memory/*.db*
+memory/config.json
+

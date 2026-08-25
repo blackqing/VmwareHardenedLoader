@@ -1,3 +1,9 @@
+---
+title: suggested_commands
+type: note
+permalink: VmwareHardenedLoader/suggested-commands
+---
+
 # Windows commands
 
 - Initialize dependency submodule from repository root: `git submodule update --init --recursive`.

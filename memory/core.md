@@ -1,3 +1,9 @@
+---
+title: core
+type: note
+permalink: VmwareHardenedLoader/core
+---
+
 # Core project map
 
 - Purpose: VMwareHardenedLoader-ng is a Windows WDM kernel driver that filters selected VMware firmware/PnP observations inside Windows guests.
@@ -13,4 +19,7 @@
 - DriverEntry invariant: load kernel symbols -> install firmware hooks -> install PnP hooks; failure stops later stages and rolls back firmware hooks if PnP registration fails. Unload removes PnP then firmware hooks.
 - Dynamic-data invariant: external dyndata.bin/dyndata.sig is accepted only after embedded public-key signature verification, size limits, exact kernel identity match, required firmware fields, and writable/non-executable/distinct RVA checks; embedded v20 data is fallback.
 - Runtime constraints: undocumented Windows kernel globals and firmware-provider layout may change across updates; x64 and ARM64 Debug/Release are maintained build targets, but ARM64 runtime behavior still requires validation on each target Windows build.
-- Read `mem:tech_stack` for toolchain/dependency details, `mem:conventions` for code and safety invariants, `mem:suggested_commands` for Windows commands, and `mem:task_completion` for completion verification.
+- Read [[tech_stack]] for toolchain/dependency details.
+- Read [[conventions]] for code and safety invariants.
+- Read [[suggested_commands]] for Windows commands.
+- Read [[task_completion]] for completion verification.

@@ -1,3 +1,9 @@
+---
+title: task_completion
+type: note
+permalink: VmwareHardenedLoader/task-completion
+---
+
 # Completion and verification gate
 
 - For driver/source changes, run the relevant x64 and/or ARM64 rebuild from a VS 2022 Developer Command Prompt with WDK; prefer Release for final validation and Debug when diagnostics matter.

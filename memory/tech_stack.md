@@ -1,3 +1,9 @@
+---
+title: tech_stack
+type: note
+permalink: VmwareHardenedLoader/tech-stack
+---
+
 # Toolchain and dependencies
 
 - Language/runtime: C++ WDM kernel driver; Windows 10+ guest target with x64 and ARM64 build support. ARM64 runtime behavior depends on undocumented kernel layouts and requires target-build validation.

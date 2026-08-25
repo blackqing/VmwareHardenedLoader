@@ -1,3 +1,9 @@
+---
+title: conventions
+type: note
+permalink: VmwareHardenedLoader/conventions
+---
+
 # Code and safety conventions
 
 - Kernel C++ uses SAL annotations, `#pragma once` headers, anonymous namespaces for file-local state, `VmLoader...` exported module APIs, `k...` constexpr constants, and `g_...` global hook state.
